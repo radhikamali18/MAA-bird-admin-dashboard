@@ -62,10 +62,27 @@ export default function GalleryPage() {
   const [items, setItems] = useState(galleryItems);
   const [galleryLoaded, setGalleryLoaded] = useState(false);
 
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [showView, setShowView] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const [selectedItem, setSelectedItem] = useState(null);
+
+  const [title, setTitle] = useState("");
+  const [status, setStatus] = useState("Published");
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState("");
+
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All");
+
   /* ================= LOAD SAVED GALLERY ================= */
 
   useEffect(() => {
-    const savedGallery = localStorage.getItem("maaFoundationGalleryItems");
+    const savedGallery = localStorage.getItem(
+      "maaFoundationGalleryItems"
+    );
 
     if (savedGallery) {
       try {
@@ -93,25 +110,19 @@ export default function GalleryPage() {
     }
   }, [items, galleryLoaded]);
 
-  const [showAddForm, setShowAddForm] = useState(false);
-  const [showView, setShowView] = useState(false);
-  const [showEdit, setShowEdit] = useState(false);
-
-  const [selectedItem, setSelectedItem] = useState(null);
-
-  const [title, setTitle] = useState("");
-  const [status, setStatus] = useState("Published");
-  const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
-
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
+  /* ================= LOGOUT ================= */
 
   const handleLogout = () => {
     document.cookie =
       "adminAuthorized=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
 
     router.push("/login");
+  };
+
+  /* ================= CLOSE MOBILE MENU ================= */
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
   };
 
   /* ================= FILTER ================= */
@@ -151,13 +162,18 @@ export default function GalleryPage() {
   const handleAddPhoto = (e) => {
     e.preventDefault();
 
-    if (!title || !imagePreview) {
+    if (!title.trim() || !imagePreview) {
       alert("Please enter title and select a photo.");
       return;
     }
 
     const newItem = {
-      id: `G-${String(items.length + 1).padStart(3, "0")}`,
+      id: `G-${String(
+        items.reduce((max, item) => {
+          const number = Number(item.id.split("-")[1]) || 0;
+          return Math.max(max, number);
+        }, 0) + 1
+      ).padStart(3, "0")}`,
       title: title,
       date: new Date().toLocaleDateString("en-GB", {
         day: "2-digit",
@@ -192,12 +208,17 @@ export default function GalleryPage() {
     setTitle(item.title);
     setStatus(item.status);
     setImagePreview(item.image);
+    setImage(null);
 
     setShowEdit(true);
   };
 
   const handleUpdate = (e) => {
     e.preventDefault();
+
+    if (!title.trim() || !selectedItem) {
+      return;
+    }
 
     setItems(
       items.map((item) =>
@@ -216,6 +237,7 @@ export default function GalleryPage() {
     setSelectedItem(null);
     setTitle("");
     setStatus("Published");
+    setImage(null);
     setImagePreview("");
   };
 
@@ -231,46 +253,72 @@ export default function GalleryPage() {
     }
   };
 
-  return (
-    <main className="h-screen overflow-hidden bg-green-50">
+  /* ================= RESET FORM ================= */
 
-      <div className="flex h-screen overflow-hidden">
+  const resetForm = () => {
+    setTitle("");
+    setStatus("Published");
+    setImage(null);
+    setImagePreview("");
+  };
+
+  return (
+    <main className="min-h-screen overflow-x-hidden bg-green-50">
+      <div className="relative flex min-h-screen">
 
         {/* ================= SIDEBAR ================= */}
 
         <aside
-          className="relative hidden h-screen w-64 shrink-0 overflow-hidden bg-cover bg-center bg-no-repeat text-white lg:flex lg:flex-col"
+          className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col overflow-hidden bg-cover bg-center bg-no-repeat text-white transition-transform duration-300 lg:sticky lg:top-0 lg:z-20 lg:translate-x-0 ${
+            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
           style={{
             backgroundImage:
               "url('/images/gallery/hero-bird-bg.png')",
           }}
         >
-
           {/* Sidebar Content */}
+
           <div className="relative z-10 flex h-full flex-col">
 
-            <div className="flex items-center gap-3 border-b border-green-800 px-5 py-6">
+            {/* Logo Section */}
 
-              <img
-                src="/images/logo.png"
-                alt="Maa Foundation Logo"
-                className="h-12 w-12 rounded-full bg-white object-contain"
-              />
+            <div className="flex items-center justify-between gap-3 border-b border-green-800 px-5 py-5 sm:py-6">
 
-              <div>
+              <div className="flex min-w-0 items-center gap-3">
 
-                <h1 className="font-bold">
-                  Maa Foundation
-                </h1>
+                <img
+                  src="/images/logo.png"
+                  alt="Maa Foundation Logo"
+                  className="h-12 w-12 shrink-0 rounded-full bg-white object-contain"
+                />
 
-                <p className="text-xs text-green-200">
-                  Admin Panel
-                </p>
+                <div>
+                  <h1 className="font-bold">
+                    Maa Foundation
+                  </h1>
+
+                  <p className="text-xs text-green-200">
+                    Admin Panel
+                  </p>
+                </div>
 
               </div>
 
+              {/* Mobile Close Button */}
+
+              <button
+                type="button"
+                onClick={closeMobileMenu}
+                aria-label="Close navigation menu"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-2xl text-white hover:bg-green-800 lg:hidden"
+              >
+                ×
+              </button>
+
             </div>
 
+            {/* Navigation */}
 
             <nav className="flex-1 overflow-y-auto px-4 py-6">
 
@@ -278,118 +326,99 @@ export default function GalleryPage() {
                 Main Menu
               </p>
 
-
               <div className="space-y-2">
 
                 {/* Dashboard */}
 
                 <Link
                   href="/dashboard"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
-
                   <img
                     src="/images/icons/dashboard.jpg"
                     alt="Dashboard"
                     className="h-6 w-6 object-contain"
                   />
-
                   Dashboard
-
                 </Link>
-
 
                 {/* Bird Reports */}
 
                 <Link
                   href="/dashboard/reports"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
-
                   <img
                     src="/images/icons/release.png"
                     alt="Bird Reports"
                     className="h-6 w-6 object-contain"
                   />
-
                   Bird Reports
-
                 </Link>
-
 
                 {/* Birds Under Care */}
 
                 <Link
                   href="/dashboard/care"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
-
                   <img
                     src="/images/icons/our services.png"
                     alt="Bird Care"
                     className="h-6 w-6 object-contain"
                   />
-
                   Birds Under Care
-
                 </Link>
-
 
                 {/* Volunteers */}
 
                 <Link
                   href="/dashboard/volunteers"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
-
                   <img
                     src="/images/icons/volunteer.png"
                     alt="Volunteers"
                     className="h-6 w-6 object-contain"
                   />
-
                   Volunteers
-
                 </Link>
-
 
                 {/* Gallery */}
 
                 <Link
                   href="/dashboard/gallery"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl bg-green-800 px-4 py-3 font-semibold text-white"
                 >
-
                   <img
                     src="/images/icons/gallery.png"
                     alt="Gallery"
                     className="h-6 w-6 object-contain"
                   />
-
                   Gallery
-
                 </Link>
-
 
                 {/* Messages */}
 
                 <Link
                   href="/dashboard/messages"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
-
                   <img
                     src="/images/icons/messages.png"
                     alt="Messages"
                     className="h-6 w-6 object-contain"
                   />
-
                   Messages
-
                 </Link>
 
               </div>
-
 
               {/* Settings */}
 
@@ -399,26 +428,22 @@ export default function GalleryPage() {
                   Other
                 </p>
 
-
                 <Link
                   href="/dashboard/settings"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
-
                   <img
                     src="/images/icons/setting.jpg"
                     alt="Settings"
                     className="h-6 w-6 object-contain"
                   />
-
                   Settings
-
                 </Link>
 
               </div>
 
             </nav>
-
 
             {/* Logout */}
 
@@ -429,15 +454,12 @@ export default function GalleryPage() {
                 onClick={handleLogout}
                 className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
               >
-
                 <img
                   src="/images/icons/logout.jpg"
                   alt="Logout"
                   className="h-6 w-6 object-contain"
                 />
-
                 Logout
-
               </button>
 
             </div>
@@ -446,57 +468,79 @@ export default function GalleryPage() {
 
         </aside>
 
+        {/* ================= MOBILE SIDEBAR BACKDROP ================= */}
+
+        {mobileMenuOpen && (
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            onClick={closeMobileMenu}
+            className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          />
+        )}
 
         {/* ================= MAIN CONTENT ================= */}
 
-        <section className="h-screen min-w-0 flex-1 overflow-y-auto">
+        <section className="min-h-screen min-w-0 flex-1">
 
           {/* Header */}
 
-          <header className="border-b border-green-100 bg-white px-6 py-5 shadow-sm">
+          <header className="border-b border-green-100 bg-white px-4 py-5 shadow-sm sm:px-6">
 
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
 
-              <div>
+              {/* Mobile Hamburger */}
 
-                <h2 className="text-2xl font-bold text-green-950">
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(true)}
+                aria-label="Open navigation menu"
+                className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-800 text-2xl text-white transition hover:bg-green-900 lg:hidden"
+              >
+                ☰
+              </button>
+
+              <div className="min-w-0 flex-1">
+
+                <h2 className="text-xl font-bold text-green-950 sm:text-2xl">
                   Gallery
                 </h2>
 
-                <p className="mt-1 text-sm text-gray-600">
+                <p className="mt-1 text-sm leading-5 text-gray-600">
                   Manage rescued bird photos and rehabilitation memories.
                 </p>
 
               </div>
 
+              {/* Add Photo Button */}
 
               <button
                 type="button"
                 onClick={() => {
+                  resetForm();
                   setShowAddForm(true);
-                  setTitle("");
-                  setStatus("Published");
-                  setImagePreview("");
                 }}
-                className="rounded-full bg-green-700 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-green-800"
+                className="shrink-0 rounded-xl bg-green-700 px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-green-800 sm:px-5 sm:text-sm"
               >
-                + Add Photo
+                <span className="sm:hidden">+ Add</span>
+                <span className="hidden sm:inline">+ Add Photo</span>
               </button>
 
             </div>
 
           </header>
 
-
           {/* Content */}
 
-          <div className="px-6 py-8">
+          <div className="px-4 py-5 sm:px-6 sm:py-8">
 
             {/* Summary */}
 
-            <div className="grid gap-5 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
 
-              <div className="rounded-2xl bg-white p-6 shadow-sm">
+              {/* Total Photos */}
+
+              <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
 
                 <p className="text-sm text-gray-500">
                   Total Photos
@@ -508,8 +552,9 @@ export default function GalleryPage() {
 
               </div>
 
+              {/* Published */}
 
-              <div className="rounded-2xl bg-white p-6 shadow-sm">
+              <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
 
                 <p className="text-sm text-gray-500">
                   Published
@@ -525,8 +570,9 @@ export default function GalleryPage() {
 
               </div>
 
+              {/* Drafts */}
 
-              <div className="rounded-2xl bg-white p-6 shadow-sm">
+              <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
 
                 <p className="text-sm text-gray-500">
                   Drafts
@@ -544,7 +590,6 @@ export default function GalleryPage() {
 
             </div>
 
-
             {/* Gallery Items */}
 
             <div className="mt-8">
@@ -561,12 +606,15 @@ export default function GalleryPage() {
 
               </div>
 
-
               {/* Search and Filter */}
 
-              <div className="mb-5 flex flex-col gap-4 rounded-2xl bg-white p-5 shadow-sm md:flex-row">
+              <div className="mb-5 flex flex-col gap-4 rounded-2xl bg-white p-4 shadow-sm sm:p-5 md:flex-row">
 
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
+
+                  <label className="mb-2 block text-sm font-semibold text-green-950">
+                    Search Gallery
+                  </label>
 
                   <input
                     type="text"
@@ -578,15 +626,17 @@ export default function GalleryPage() {
 
                 </div>
 
+                <div className="w-full md:w-48">
 
-                <div className="md:w-48">
+                  <label className="mb-2 block text-sm font-semibold text-green-950">
+                    Filter by Status
+                  </label>
 
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
                   >
-
                     <option value="All">
                       All Status
                     </option>
@@ -598,13 +648,11 @@ export default function GalleryPage() {
                     <option value="Draft">
                       Draft
                     </option>
-
                   </select>
 
                 </div>
 
               </div>
-
 
               {/* ================= LIST ================= */}
 
@@ -612,7 +660,7 @@ export default function GalleryPage() {
 
                 <div className="overflow-x-auto">
 
-                  <table className="w-full min-w-[950px] text-left">
+                  <table className="w-full min-w-[850px] text-left">
 
                     <thead className="bg-green-50">
 
@@ -642,7 +690,6 @@ export default function GalleryPage() {
 
                     </thead>
 
-
                     <tbody className="divide-y divide-gray-100">
 
                       {filteredItems.length > 0 ? (
@@ -670,7 +717,6 @@ export default function GalleryPage() {
 
                             </td>
 
-
                             {/* Gallery Item */}
 
                             <td className="px-6 py-5">
@@ -689,13 +735,11 @@ export default function GalleryPage() {
 
                             </td>
 
-
                             {/* Date */}
 
                             <td className="px-6 py-5 text-gray-600">
                               {item.date}
                             </td>
-
 
                             {/* Status */}
 
@@ -713,7 +757,6 @@ export default function GalleryPage() {
 
                             </td>
 
-
                             {/* Actions */}
 
                             <td className="px-6 py-5">
@@ -730,7 +773,6 @@ export default function GalleryPage() {
                                   View
                                 </button>
 
-
                                 {/* Edit */}
 
                                 <button
@@ -740,7 +782,6 @@ export default function GalleryPage() {
                                 >
                                   Edit
                                 </button>
-
 
                                 {/* Delete */}
 
@@ -791,22 +832,21 @@ export default function GalleryPage() {
 
       </div>
 
-
       {/* ================================================= */}
       {/* ================= ADD PHOTO MODAL =============== */}
       {/* ================================================= */}
 
       {showAddForm && (
 
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-5">
+        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-3 py-5 sm:items-center sm:p-5">
 
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+          <div className="my-auto w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl sm:p-6">
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between gap-3">
 
               <div>
 
-                <h3 className="text-xl font-bold text-green-950">
+                <h3 className="text-lg font-bold text-green-950 sm:text-xl">
                   Add Gallery Photo
                 </h3>
 
@@ -816,21 +856,20 @@ export default function GalleryPage() {
 
               </div>
 
-
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="text-2xl text-gray-500 hover:text-gray-800"
+                aria-label="Close add photo form"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xl text-gray-500 hover:bg-gray-100 hover:text-gray-800"
               >
                 ×
               </button>
 
             </div>
 
-
             <form
               onSubmit={handleAddPhoto}
-              className="mt-6 space-y-5"
+              className="mt-5 space-y-4 sm:mt-6 sm:space-y-5"
             >
 
               {/* Title */}
@@ -846,11 +885,11 @@ export default function GalleryPage() {
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Enter photo title"
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                  required
+                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
                 />
 
               </div>
-
 
               {/* Image */}
 
@@ -864,11 +903,11 @@ export default function GalleryPage() {
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
+                  required={!imagePreview}
+                  className="w-full min-w-0 rounded-xl border border-gray-200 px-3 py-3 text-sm"
                 />
 
               </div>
-
 
               {/* Preview */}
 
@@ -879,13 +918,12 @@ export default function GalleryPage() {
                   <img
                     src={imagePreview}
                     alt="Preview"
-                    className="h-48 w-full object-cover"
+                    className="h-40 w-full object-cover sm:h-48"
                   />
 
                 </div>
 
               )}
-
 
               {/* Status */}
 
@@ -898,9 +936,8 @@ export default function GalleryPage() {
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
+                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600"
                 >
-
                   <option value="Published">
                     Published
                   </option>
@@ -908,26 +945,23 @@ export default function GalleryPage() {
                   <option value="Draft">
                     Draft
                   </option>
-
                 </select>
 
               </div>
 
-
-              <div className="flex gap-3">
+              <div className="flex flex-col-reverse gap-3 sm:flex-row">
 
                 <button
                   type="button"
                   onClick={() => setShowAddForm(false)}
-                  className="flex-1 rounded-xl border border-gray-300 px-5 py-3 font-semibold text-gray-600"
+                  className="flex-1 rounded-xl border border-gray-300 px-5 py-3 font-semibold text-gray-600 transition hover:bg-gray-50"
                 >
                   Cancel
                 </button>
 
-
                 <button
                   type="submit"
-                  className="flex-1 rounded-xl bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-800"
+                  className="flex-1 rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800"
                 >
                   Add Photo
                 </button>
@@ -942,48 +976,46 @@ export default function GalleryPage() {
 
       )}
 
-
       {/* ================================================= */}
       {/* ================= VIEW MODAL ==================== */}
       {/* ================================================= */}
 
       {showView && selectedItem && (
 
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-5">
+        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-3 py-5 sm:items-center sm:p-5">
 
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+          <div className="my-auto w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl sm:p-6">
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
 
-              <h3 className="text-xl font-bold text-green-950">
+              <h3 className="text-lg font-bold text-green-950 sm:text-xl">
                 Gallery Photo
               </h3>
 
               <button
                 type="button"
                 onClick={() => setShowView(false)}
-                className="text-2xl text-gray-500 hover:text-gray-800"
+                aria-label="Close gallery photo"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xl text-gray-500 hover:bg-gray-100 hover:text-gray-800"
               >
                 ×
               </button>
 
             </div>
 
-
             <div className="mt-5 overflow-hidden rounded-xl">
 
               <img
                 src={selectedItem.image}
                 alt={selectedItem.title}
-                className="h-72 w-full object-cover"
+                className="max-h-[55vh] w-full object-contain sm:h-72 sm:object-cover"
               />
 
             </div>
 
-
             <div className="mt-5">
 
-              <h4 className="text-xl font-bold text-green-950">
+              <h4 className="break-words text-xl font-bold text-green-950">
                 {selectedItem.title}
               </h4>
 
@@ -1011,11 +1043,10 @@ export default function GalleryPage() {
 
             </div>
 
-
             <button
               type="button"
               onClick={() => setShowView(false)}
-              className="mt-6 w-full rounded-xl bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-800"
+              className="mt-6 w-full rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800"
             >
               Close
             </button>
@@ -1026,22 +1057,21 @@ export default function GalleryPage() {
 
       )}
 
-
       {/* ================================================= */}
       {/* ================= EDIT MODAL ==================== */}
       {/* ================================================= */}
 
       {showEdit && selectedItem && (
 
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-5">
+        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-3 py-5 sm:items-center sm:p-5">
 
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+          <div className="my-auto w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl sm:p-6">
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-start justify-between gap-3">
 
               <div>
 
-                <h3 className="text-xl font-bold text-green-950">
+                <h3 className="text-lg font-bold text-green-950 sm:text-xl">
                   Edit Gallery Photo
                 </h3>
 
@@ -1051,21 +1081,20 @@ export default function GalleryPage() {
 
               </div>
 
-
               <button
                 type="button"
                 onClick={() => setShowEdit(false)}
-                className="text-2xl text-gray-500 hover:text-gray-800"
+                aria-label="Close edit form"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xl text-gray-500 hover:bg-gray-100 hover:text-gray-800"
               >
                 ×
               </button>
 
             </div>
 
-
             <form
               onSubmit={handleUpdate}
-              className="mt-6 space-y-5"
+              className="mt-5 space-y-4 sm:mt-6 sm:space-y-5"
             >
 
               {/* Title */}
@@ -1080,11 +1109,11 @@ export default function GalleryPage() {
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                  required
+                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
                 />
 
               </div>
-
 
               {/* New Image */}
 
@@ -1098,11 +1127,10 @@ export default function GalleryPage() {
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm"
+                  className="w-full min-w-0 rounded-xl border border-gray-200 px-3 py-3 text-sm"
                 />
 
               </div>
-
 
               {/* Preview */}
 
@@ -1113,13 +1141,12 @@ export default function GalleryPage() {
                   <img
                     src={imagePreview}
                     alt="Preview"
-                    className="h-48 w-full object-cover"
+                    className="h-40 w-full object-cover sm:h-48"
                   />
 
                 </div>
 
               )}
-
 
               {/* Status */}
 
@@ -1132,9 +1159,8 @@ export default function GalleryPage() {
                 <select
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 outline-none focus:border-green-600"
+                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600"
                 >
-
                   <option value="Published">
                     Published
                   </option>
@@ -1142,26 +1168,23 @@ export default function GalleryPage() {
                   <option value="Draft">
                     Draft
                   </option>
-
                 </select>
 
               </div>
 
-
-              <div className="flex gap-3">
+              <div className="flex flex-col-reverse gap-3 sm:flex-row">
 
                 <button
                   type="button"
                   onClick={() => setShowEdit(false)}
-                  className="flex-1 rounded-xl border border-gray-300 px-5 py-3 font-semibold text-gray-600"
+                  className="flex-1 rounded-xl border border-gray-300 px-5 py-3 font-semibold text-gray-600 transition hover:bg-gray-50"
                 >
                   Cancel
                 </button>
 
-
                 <button
                   type="submit"
-                  className="flex-1 rounded-xl bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-800"
+                  className="flex-1 rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800"
                 >
                   Save Changes
                 </button>

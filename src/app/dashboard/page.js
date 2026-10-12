@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function DashboardPage() {
   const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     document.cookie =
@@ -20,7 +22,8 @@ export default function DashboardPage() {
 
         {/* ================= SIDEBAR ================= */}
         <aside
-          className="relative hidden h-screen w-64 shrink-0 overflow-hidden bg-cover bg-center bg-no-repeat text-white lg:flex lg:flex-col"
+          className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col overflow-hidden bg-cover bg-center bg-no-repeat text-white transition-transform duration-300 lg:relative lg:translate-x-0 ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
           style={{
             backgroundImage: "url('/images/gallery/hero-bird-bg.png')",
           }}
@@ -192,6 +195,15 @@ export default function DashboardPage() {
 
         </aside>
 
+        {mobileMenuOpen && (
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={() => setMobileMenuOpen(false)}
+            className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          />
+        )}
+
 
         {/* ================= MAIN CONTENT ================= */}
         <section className="h-screen min-w-0 flex-1 overflow-y-auto">
@@ -202,6 +214,13 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between">
 
               <div>
+                <button
+                  type="button"
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="rounded-lg bg-green-800 px-3 py-2 text-xl text-white lg:hidden"
+                >
+                  ☰
+                </button>
 
                 <h2 className="text-2xl font-bold text-green-950">
                   Dashboard Overview

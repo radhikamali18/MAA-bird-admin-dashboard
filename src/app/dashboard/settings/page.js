@@ -13,6 +13,13 @@ export default function SettingsPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
 
+  // Mobile Menu
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
   // Admin Profile
   const [adminName, setAdminName] = useState("Admin");
   const [adminEmail, setAdminEmail] = useState(
@@ -131,13 +138,15 @@ export default function SettingsPage() {
   };
 
   return (
-    <main className="h-screen overflow-hidden bg-green-50">
-      <div className="flex h-screen overflow-hidden">
+    <main className="min-h-screen overflow-x-hidden bg-green-50">
+      <div className="relative flex min-h-screen">
 
         {/* ================= SIDEBAR ================= */}
 
         <aside
-          className="relative hidden h-screen w-64 shrink-0 overflow-hidden bg-cover bg-center bg-no-repeat text-white lg:flex lg:flex-col"
+          className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col overflow-hidden bg-cover bg-center bg-no-repeat text-white transition-transform duration-300 lg:sticky lg:top-0 lg:z-20 lg:translate-x-0 ${
+            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
           style={{
             backgroundImage:
               "url('/images/gallery/hero-bird-bg.png')",
@@ -147,20 +156,33 @@ export default function SettingsPage() {
 
           <div className="relative z-10 flex h-full flex-col">
 
-            <div className="flex items-center gap-3 border-b border-green-800 px-5 py-6">
-              <img
-                src="/images/logo.png"
-                alt="Maa Foundation Logo"
-                className="h-12 w-12 rounded-full bg-white object-contain"
-              />
+            {/* Logo and Mobile Close Button */}
 
-              <div>
-                <h1 className="font-bold">Maa Foundation</h1>
+            <div className="flex items-center justify-between gap-3 border-b border-green-800 px-5 py-6">
+              <div className="flex min-w-0 items-center gap-3">
+                <img
+                  src="/images/logo.png"
+                  alt="Maa Foundation Logo"
+                  className="h-12 w-12 shrink-0 rounded-full bg-white object-contain"
+                />
 
-                <p className="text-xs text-green-200">
-                  Admin Panel
-                </p>
+                <div>
+                  <h1 className="font-bold">Maa Foundation</h1>
+
+                  <p className="text-xs text-green-200">
+                    Admin Panel
+                  </p>
+                </div>
               </div>
+
+              <button
+                type="button"
+                onClick={closeMobileMenu}
+                aria-label="Close navigation menu"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-2xl text-white transition hover:bg-green-700 lg:hidden"
+              >
+                ×
+              </button>
             </div>
 
             <nav className="flex-1 overflow-y-auto px-4 py-6">
@@ -173,6 +195,7 @@ export default function SettingsPage() {
 
                 <Link
                   href="/dashboard"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
                   <img
@@ -186,6 +209,7 @@ export default function SettingsPage() {
 
                 <Link
                   href="/dashboard/reports"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
                   <img
@@ -199,6 +223,7 @@ export default function SettingsPage() {
 
                 <Link
                   href="/dashboard/care"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
                   <img
@@ -212,6 +237,7 @@ export default function SettingsPage() {
 
                 <Link
                   href="/dashboard/volunteers"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
                   <img
@@ -225,6 +251,7 @@ export default function SettingsPage() {
 
                 <Link
                   href="/dashboard/gallery"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
                   <img
@@ -238,6 +265,7 @@ export default function SettingsPage() {
 
                 <Link
                   href="/dashboard/messages"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
                   <img
@@ -259,6 +287,7 @@ export default function SettingsPage() {
 
                 <Link
                   href="/dashboard/settings"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl bg-green-800 px-4 py-3 font-semibold text-white"
                 >
                   <img
@@ -295,31 +324,59 @@ export default function SettingsPage() {
           </div>
         </aside>
 
+        {/* ================= MOBILE MENU BACKDROP ================= */}
+
+        {mobileMenuOpen && (
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            onClick={closeMobileMenu}
+            className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          />
+        )}
+
         {/* ================= MAIN CONTENT ================= */}
 
-        <section className="h-screen min-w-0 flex-1 overflow-y-auto">
+        <section className="min-h-screen min-w-0 flex-1">
 
           {/* Header */}
 
-          <header className="border-b border-green-100 bg-white px-6 py-5 shadow-sm">
+          <header className="border-b border-green-100 bg-white px-4 py-5 shadow-sm sm:px-6">
 
-            <h2 className="text-2xl font-bold text-green-950">
-              Settings
-            </h2>
+            <div className="flex items-start gap-3">
 
-            <p className="mt-1 text-sm text-gray-600">
-              Manage your admin profile and dashboard preferences.
-            </p>
+              {/* Mobile Hamburger Button */}
+
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(true)}
+                aria-label="Open navigation menu"
+                className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-800 text-2xl text-white transition hover:bg-green-900 lg:hidden"
+              >
+                ☰
+              </button>
+
+              <div className="min-w-0">
+                <h2 className="text-2xl font-bold text-green-950">
+                  Settings
+                </h2>
+
+                <p className="mt-1 text-sm text-gray-600">
+                  Manage your admin profile and dashboard preferences.
+                </p>
+              </div>
+
+            </div>
 
           </header>
 
           {/* Content */}
 
-          <div className="mx-auto max-w-5xl px-6 py-8">
+          <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
 
             {/* Admin Profile */}
 
-            <div className="rounded-2xl bg-white p-6 shadow-sm">
+            <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
 
               <h3 className="text-xl font-bold text-green-950">
                 Admin Profile
@@ -342,7 +399,7 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       setAdminName(e.target.value)
                     }
-                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-800 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                    className="w-full min-w-0 rounded-xl border border-gray-200 px-4 py-3 text-gray-800 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
                   />
                 </div>
 
@@ -357,13 +414,13 @@ export default function SettingsPage() {
                     onChange={(e) =>
                       setAdminEmail(e.target.value)
                     }
-                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-gray-800 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                    className="w-full min-w-0 rounded-xl border border-gray-200 px-4 py-3 text-gray-800 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
                   />
                 </div>
 
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-3">
 
                 <button
                   type="button"
@@ -374,7 +431,7 @@ export default function SettingsPage() {
                 </button>
 
                 {profileMessage && (
-                  <p className="mt-6 text-sm font-semibold text-green-700">
+                  <p className="mt-6 break-words text-sm font-semibold text-green-700">
                     {profileMessage}
                   </p>
                 )}
@@ -385,7 +442,7 @@ export default function SettingsPage() {
 
             {/* Password */}
 
-            <div className="mt-6 rounded-2xl bg-white p-6 shadow-sm">
+            <div className="mt-6 rounded-2xl bg-white p-4 shadow-sm sm:p-6">
 
               <h3 className="text-xl font-bold text-green-950">
                 Change Password
@@ -399,7 +456,7 @@ export default function SettingsPage() {
 
                 {/* Current Password */}
 
-                <div>
+                <div className="min-w-0">
                   <label className="mb-2 block text-sm font-semibold text-gray-700">
                     Current Password
                   </label>
@@ -417,7 +474,7 @@ export default function SettingsPage() {
                         setCurrentPassword(e.target.value)
                       }
                       placeholder="Enter current password"
-                      className="w-full rounded-xl border border-gray-200 px-4 py-3 pr-20 text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                      className="w-full min-w-0 rounded-xl border border-gray-200 px-4 py-3 pr-20 text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
                     />
 
                     <button
@@ -439,7 +496,7 @@ export default function SettingsPage() {
 
                 {/* New Password */}
 
-                <div>
+                <div className="min-w-0">
                   <label className="mb-2 block text-sm font-semibold text-gray-700">
                     New Password
                   </label>
@@ -457,7 +514,7 @@ export default function SettingsPage() {
                         setNewPassword(e.target.value)
                       }
                       placeholder="Enter new password"
-                      className="w-full rounded-xl border border-gray-200 px-4 py-3 pr-20 text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                      className="w-full min-w-0 rounded-xl border border-gray-200 px-4 py-3 pr-20 text-gray-800 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
                     />
 
                     <button
@@ -479,7 +536,7 @@ export default function SettingsPage() {
 
               </div>
 
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-3">
 
                 <button
                   type="button"
@@ -491,7 +548,7 @@ export default function SettingsPage() {
 
                 {passwordMessage && (
                   <p
-                    className={`mt-6 text-sm font-semibold ${
+                    className={`mt-6 break-words text-sm font-semibold ${
                       passwordMessage.includes("successfully")
                         ? "text-green-700"
                         : "text-red-600"
@@ -507,7 +564,7 @@ export default function SettingsPage() {
 
             {/* Notifications */}
 
-            <div className="mt-6 rounded-2xl bg-white p-6 shadow-sm">
+            <div className="mt-6 rounded-2xl bg-white p-4 shadow-sm sm:p-6">
 
               <h3 className="text-xl font-bold text-green-950">
                 Notifications
@@ -521,9 +578,9 @@ export default function SettingsPage() {
 
                 {/* Notification Toggle */}
 
-                <div className="flex items-center justify-between gap-5">
+                <div className="flex items-center justify-between gap-4">
 
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-semibold text-gray-800">
                       Dashboard Notifications
                     </p>
@@ -535,10 +592,12 @@ export default function SettingsPage() {
 
                   <button
                     type="button"
+                    aria-label="Toggle dashboard notifications"
+                    aria-pressed={notifications}
                     onClick={() =>
                       setNotifications(!notifications)
                     }
-                    className={`relative h-7 w-12 rounded-full transition ${
+                    className={`relative h-7 w-12 shrink-0 rounded-full transition ${
                       notifications
                         ? "bg-green-700"
                         : "bg-gray-300"
@@ -557,9 +616,9 @@ export default function SettingsPage() {
 
                 {/* Email Toggle */}
 
-                <div className="flex items-center justify-between gap-5">
+                <div className="flex items-center justify-between gap-4">
 
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-semibold text-gray-800">
                       Email Alerts
                     </p>
@@ -571,10 +630,12 @@ export default function SettingsPage() {
 
                   <button
                     type="button"
+                    aria-label="Toggle email alerts"
+                    aria-pressed={emailAlerts}
                     onClick={() =>
                       setEmailAlerts(!emailAlerts)
                     }
-                    className={`relative h-7 w-12 rounded-full transition ${
+                    className={`relative h-7 w-12 shrink-0 rounded-full transition ${
                       emailAlerts
                         ? "bg-green-700"
                         : "bg-gray-300"

@@ -44,6 +44,13 @@ export default function MessagesPage() {
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [showView, setShowView] = useState(false);
 
+  // Mobile Menu
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
   /* ================= LOGOUT ================= */
 
   const handleLogout = () => {
@@ -87,12 +94,16 @@ export default function MessagesPage() {
   /* ================= VIEW MESSAGE ================= */
 
   const handleView = (message) => {
-    setSelectedMessage(message);
+    setSelectedMessage({
+      ...message,
+      status: message.status === "Unread" ? "Read" : message.status,
+    });
+
     setShowView(true);
 
     if (message.status === "Unread") {
-      setMessageList(
-        messageList.map((item) =>
+      setMessageList((previousMessages) =>
+        previousMessages.map((item) =>
           item.id === message.id
             ? {
                 ...item,
@@ -112,14 +123,16 @@ export default function MessagesPage() {
   };
 
   return (
-    <main className="h-screen overflow-hidden bg-green-50">
+    <main className="min-h-screen overflow-x-hidden bg-green-50">
 
-      <div className="flex h-screen overflow-hidden">
+      <div className="relative flex min-h-screen">
 
         {/* ================= SIDEBAR ================= */}
 
         <aside
-          className="relative hidden h-screen w-64 shrink-0 overflow-hidden bg-cover bg-center bg-no-repeat text-white lg:flex lg:flex-col"
+          className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col overflow-hidden bg-cover bg-center bg-no-repeat text-white transition-transform duration-300 lg:sticky lg:top-0 lg:z-20 lg:translate-x-0 ${
+            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
           style={{
             backgroundImage:
               "url('/images/gallery/hero-bird-bg.png')",
@@ -132,28 +145,42 @@ export default function MessagesPage() {
 
             {/* Logo Section */}
 
-            <div className="flex items-center gap-3 border-b border-green-800 px-5 py-6">
+            <div className="flex items-center justify-between gap-3 border-b border-green-800 px-5 py-6">
 
-              <img
-                src="/images/logo.png"
-                alt="Maa Foundation Logo"
-                className="h-12 w-12 rounded-full bg-white object-contain"
-              />
+              <div className="flex min-w-0 items-center gap-3">
 
-              <div>
+                <img
+                  src="/images/logo.png"
+                  alt="Maa Foundation Logo"
+                  className="h-12 w-12 shrink-0 rounded-full bg-white object-contain"
+                />
 
-                <h1 className="font-bold">
-                  Maa Foundation
-                </h1>
+                <div>
 
-                <p className="text-xs text-green-200">
-                  Admin Panel
-                </p>
+                  <h1 className="font-bold">
+                    Maa Foundation
+                  </h1>
+
+                  <p className="text-xs text-green-200">
+                    Admin Panel
+                  </p>
+
+                </div>
 
               </div>
 
-            </div>
+              {/* Mobile Close Button */}
 
+              <button
+                type="button"
+                onClick={closeMobileMenu}
+                aria-label="Close navigation menu"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-2xl text-white transition hover:bg-green-700 lg:hidden"
+              >
+                ×
+              </button>
+
+            </div>
 
             {/* Navigation */}
 
@@ -163,13 +190,13 @@ export default function MessagesPage() {
                 Main Menu
               </p>
 
-
               <div className="space-y-2">
 
                 {/* Dashboard */}
 
                 <Link
                   href="/dashboard"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
 
@@ -183,11 +210,11 @@ export default function MessagesPage() {
 
                 </Link>
 
-
                 {/* Bird Reports */}
 
                 <Link
                   href="/dashboard/reports"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
 
@@ -201,11 +228,11 @@ export default function MessagesPage() {
 
                 </Link>
 
-
                 {/* Birds Under Care */}
 
                 <Link
                   href="/dashboard/care"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
 
@@ -219,11 +246,11 @@ export default function MessagesPage() {
 
                 </Link>
 
-
                 {/* Volunteers */}
 
                 <Link
                   href="/dashboard/volunteers"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
 
@@ -237,11 +264,11 @@ export default function MessagesPage() {
 
                 </Link>
 
-
                 {/* Gallery */}
 
                 <Link
                   href="/dashboard/gallery"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
 
@@ -255,11 +282,11 @@ export default function MessagesPage() {
 
                 </Link>
 
-
                 {/* Messages */}
 
                 <Link
                   href="/dashboard/messages"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl bg-green-800 px-4 py-3 font-semibold text-white"
                 >
 
@@ -275,7 +302,6 @@ export default function MessagesPage() {
 
               </div>
 
-
               {/* Other */}
 
               <div className="mt-8 border-t border-green-800 pt-6">
@@ -284,9 +310,9 @@ export default function MessagesPage() {
                   Other
                 </p>
 
-
                 <Link
                   href="/dashboard/settings"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
 
@@ -303,7 +329,6 @@ export default function MessagesPage() {
               </div>
 
             </nav>
-
 
             {/* Logout */}
 
@@ -331,37 +356,65 @@ export default function MessagesPage() {
 
         </aside>
 
+        {/* ================= MOBILE MENU BACKDROP ================= */}
+
+        {mobileMenuOpen && (
+          <button
+            type="button"
+            aria-label="Close navigation menu"
+            onClick={closeMobileMenu}
+            className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          />
+        )}
 
         {/* ================= MAIN CONTENT ================= */}
 
-        <section className="h-screen min-w-0 flex-1 overflow-y-auto">
+        <section className="min-h-screen min-w-0 flex-1">
 
           {/* Header */}
 
-          <header className="border-b border-green-100 bg-white px-6 py-5 shadow-sm">
+          <header className="border-b border-green-100 bg-white px-4 py-5 shadow-sm sm:px-6">
 
-            <h2 className="text-2xl font-bold text-green-950">
-              Messages
-            </h2>
+            <div className="flex items-start gap-3">
 
-            <p className="mt-1 text-sm text-gray-600">
-              View messages and enquiries received from the community.
-            </p>
+              {/* Mobile Hamburger Button */}
+
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(true)}
+                aria-label="Open navigation menu"
+                className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-800 text-2xl text-white transition hover:bg-green-900 lg:hidden"
+              >
+                ☰
+              </button>
+
+              <div className="min-w-0">
+
+                <h2 className="text-2xl font-bold text-green-950">
+                  Messages
+                </h2>
+
+                <p className="mt-1 text-sm text-gray-600">
+                  View messages and enquiries received from the community.
+                </p>
+
+              </div>
+
+            </div>
 
           </header>
 
-
           {/* Content */}
 
-          <div className="px-6 py-8">
+          <div className="px-4 py-6 sm:px-6 sm:py-8">
 
             {/* Summary Cards */}
 
-            <div className="grid gap-5 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
 
               {/* Total Messages */}
 
-              <div className="rounded-2xl bg-white p-6 shadow-sm">
+              <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
 
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-green-100">
 
@@ -383,10 +436,9 @@ export default function MessagesPage() {
 
               </div>
 
-
               {/* Unread Messages */}
 
-              <div className="rounded-2xl bg-white p-6 shadow-sm">
+              <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
 
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-yellow-100">
 
@@ -408,10 +460,9 @@ export default function MessagesPage() {
 
               </div>
 
-
               {/* Read Messages */}
 
-              <div className="rounded-2xl bg-white p-6 shadow-sm">
+              <div className="rounded-2xl bg-white p-5 shadow-sm sm:col-span-2 sm:p-6 xl:col-span-1">
 
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-green-100">
 
@@ -435,14 +486,13 @@ export default function MessagesPage() {
 
             </div>
 
-
             {/* Messages Table */}
 
             <div className="mt-8 overflow-hidden rounded-2xl bg-white shadow-sm">
 
               {/* Table Header */}
 
-              <div className="border-b border-gray-100 px-6 py-5">
+              <div className="border-b border-gray-100 px-4 py-5 sm:px-6">
 
                 <h3 className="text-xl font-bold text-green-950">
                   Community Messages
@@ -454,29 +504,27 @@ export default function MessagesPage() {
 
               </div>
 
-
               {/* Search and Filter */}
 
-              <div className="flex flex-col gap-4 border-b border-gray-100 px-6 py-5 md:flex-row">
+              <div className="flex flex-col gap-4 border-b border-gray-100 px-4 py-5 sm:px-6 md:flex-row">
 
                 {/* Search */}
 
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
 
                   <input
                     type="text"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Search by name, email, phone or message..."
-                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                    className="w-full min-w-0 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
                   />
 
                 </div>
 
-
                 {/* Status Filter */}
 
-                <div className="md:w-48">
+                <div className="w-full md:w-48">
 
                   <select
                     value={statusFilter}
@@ -502,10 +550,9 @@ export default function MessagesPage() {
 
               </div>
 
-
               {/* Table */}
 
-              <div className="overflow-x-auto">
+              <div className="w-full overflow-x-auto">
 
                 <table className="w-full min-w-[1000px] text-left">
 
@@ -545,7 +592,6 @@ export default function MessagesPage() {
 
                   </thead>
 
-
                   <tbody className="divide-y divide-gray-100">
 
                     {filteredMessages.length > 0 ? (
@@ -563,14 +609,13 @@ export default function MessagesPage() {
                             {message.id}
                           </td>
 
-
                           {/* Name */}
 
                           <td className="px-6 py-5">
 
                             <div className="flex items-center gap-3">
 
-                              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 font-bold text-green-700">
+                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-green-100 font-bold text-green-700">
                                 {message.name.charAt(0)}
                               </div>
 
@@ -581,7 +626,6 @@ export default function MessagesPage() {
                             </div>
 
                           </td>
-
 
                           {/* Contact */}
 
@@ -597,20 +641,17 @@ export default function MessagesPage() {
 
                           </td>
 
-
                           {/* Message */}
 
                           <td className="max-w-xs px-6 py-5 text-sm text-gray-600">
                             {message.message}
                           </td>
 
-
                           {/* Date */}
 
                           <td className="px-6 py-5 text-gray-600">
                             {message.date}
                           </td>
-
 
                           {/* Status */}
 
@@ -627,7 +668,6 @@ export default function MessagesPage() {
                             </span>
 
                           </td>
-
 
                           {/* Action */}
 
@@ -676,22 +716,25 @@ export default function MessagesPage() {
 
       </div>
 
-
-      {/* ================================================= */}
-      {/* ================= VIEW MESSAGE MODAL ============ */}
-      {/* ================================================= */}
+      {/* ================= VIEW MESSAGE MODAL ================= */}
 
       {showView && selectedMessage && (
 
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-5">
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/50 px-4 py-6 sm:px-5"
+          onClick={handleCloseView}
+        >
 
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+          <div
+            className="my-auto w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl sm:p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
 
             {/* Modal Header */}
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
 
-              <div>
+              <div className="min-w-0">
 
                 <h3 className="text-xl font-bold text-green-950">
                   Message Details
@@ -703,35 +746,34 @@ export default function MessagesPage() {
 
               </div>
 
-
               <button
                 type="button"
+                aria-label="Close message details"
                 onClick={handleCloseView}
-                className="text-2xl text-gray-500 hover:text-gray-800"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-2xl text-gray-500 hover:bg-gray-200 hover:text-gray-800"
               >
                 ×
               </button>
 
             </div>
 
-
             {/* Sender */}
 
-            <div className="mt-6 rounded-xl bg-green-50 p-5">
+            <div className="mt-6 rounded-xl bg-green-50 p-4 sm:p-5">
 
               <div className="flex items-center gap-4">
 
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-lg font-bold text-green-700">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-100 text-lg font-bold text-green-700">
                   {selectedMessage.name.charAt(0)}
                 </div>
 
-                <div>
+                <div className="min-w-0">
 
-                  <h4 className="font-bold text-green-950">
+                  <h4 className="break-words font-bold text-green-950">
                     {selectedMessage.name}
                   </h4>
 
-                  <p className="text-sm text-gray-600">
+                  <p className="break-all text-sm text-gray-600">
                     {selectedMessage.email}
                   </p>
 
@@ -741,10 +783,9 @@ export default function MessagesPage() {
 
             </div>
 
-
             {/* Contact Details */}
 
-            <div className="mt-5 space-y-3">
+            <div className="mt-5 space-y-4">
 
               <div>
 
@@ -752,12 +793,11 @@ export default function MessagesPage() {
                   Phone
                 </p>
 
-                <p className="mt-1 text-sm text-gray-700">
+                <p className="mt-1 break-words text-sm text-gray-700">
                   {selectedMessage.phone}
                 </p>
 
               </div>
-
 
               <div>
 
@@ -770,7 +810,6 @@ export default function MessagesPage() {
                 </p>
 
               </div>
-
 
               <div>
 
@@ -790,21 +829,19 @@ export default function MessagesPage() {
 
               </div>
 
-
               <div>
 
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Message
                 </p>
 
-                <div className="mt-2 rounded-xl border border-gray-200 bg-white p-4 text-sm leading-6 text-gray-700">
+                <div className="mt-2 break-words rounded-xl border border-gray-200 bg-white p-4 text-sm leading-6 text-gray-700">
                   {selectedMessage.message}
                 </div>
 
               </div>
 
             </div>
-
 
             {/* Close Button */}
 

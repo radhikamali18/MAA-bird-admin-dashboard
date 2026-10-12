@@ -37,6 +37,7 @@ export default function VolunteersPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedVolunteer, setSelectedVolunteer] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleLogout = () => {
     document.cookie =
@@ -72,22 +73,29 @@ export default function VolunteersPage() {
     volunteers.map((volunteer) => volunteer.area)
   ).size;
 
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
   return (
-    <main className="h-screen overflow-hidden bg-green-50">
-      <div className="flex h-screen overflow-hidden">
+    <main className="min-h-screen overflow-x-hidden bg-green-50">
+      <div className="relative flex min-h-screen">
 
         {/* ================= SIDEBAR ================= */}
         <aside
-          className="relative hidden h-screen w-64 shrink-0 overflow-hidden bg-cover bg-center bg-no-repeat text-white lg:flex lg:flex-col"
+          className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col overflow-hidden bg-cover bg-center bg-no-repeat text-white transition-transform duration-300 lg:sticky lg:top-0 lg:z-20 lg:translate-x-0 ${
+            mobileMenuOpen
+              ? "translate-x-0"
+              : "-translate-x-full"
+          }`}
           style={{
             backgroundImage:
               "url('/images/gallery/hero-bird-bg.png')",
           }}
         >
-
-          {/* Sidebar Content */}
           <div className="relative z-10 flex h-full flex-col">
 
+            {/* Logo */}
             <div className="flex items-center gap-3 border-b border-green-800 px-5 py-6">
               <img
                 src="/images/logo.png"
@@ -96,13 +104,27 @@ export default function VolunteersPage() {
               />
 
               <div>
-                <h1 className="font-bold">Maa Foundation</h1>
+                <h1 className="font-bold">
+                  Maa Foundation
+                </h1>
+
                 <p className="text-xs text-green-200">
                   Admin Panel
                 </p>
               </div>
+
+              {/* Mobile Close Button */}
+              <button
+                type="button"
+                onClick={closeMobileMenu}
+                aria-label="Close sidebar"
+                className="ml-auto rounded-lg px-2 py-1 text-2xl text-white hover:bg-green-800 lg:hidden"
+              >
+                ×
+              </button>
             </div>
 
+            {/* Navigation */}
             <nav className="flex-1 overflow-y-auto px-4 py-6">
 
               <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-widest text-green-300">
@@ -113,6 +135,7 @@ export default function VolunteersPage() {
 
                 <Link
                   href="/dashboard"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
                   <img
@@ -125,6 +148,7 @@ export default function VolunteersPage() {
 
                 <Link
                   href="/dashboard/reports"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
                   <img
@@ -137,6 +161,7 @@ export default function VolunteersPage() {
 
                 <Link
                   href="/dashboard/care"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
                   <img
@@ -149,6 +174,7 @@ export default function VolunteersPage() {
 
                 <Link
                   href="/dashboard/volunteers"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl bg-green-800 px-4 py-3 font-semibold text-white"
                 >
                   <img
@@ -161,6 +187,7 @@ export default function VolunteersPage() {
 
                 <Link
                   href="/dashboard/gallery"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
                   <img
@@ -173,6 +200,7 @@ export default function VolunteersPage() {
 
                 <Link
                   href="/dashboard/messages"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
                   <img
@@ -185,6 +213,7 @@ export default function VolunteersPage() {
 
               </div>
 
+              {/* Settings */}
               <div className="mt-8 border-t border-green-800 pt-6">
 
                 <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-widest text-green-300">
@@ -193,6 +222,7 @@ export default function VolunteersPage() {
 
                 <Link
                   href="/dashboard/settings"
+                  onClick={closeMobileMenu}
                   className="flex items-center gap-3 rounded-xl px-4 py-3 text-green-100 transition hover:bg-green-700"
                 >
                   <img
@@ -204,9 +234,9 @@ export default function VolunteersPage() {
                 </Link>
 
               </div>
-
             </nav>
 
+            {/* Logout */}
             <div className="border-t border-green-800 p-4">
 
               <button
@@ -223,38 +253,60 @@ export default function VolunteersPage() {
               </button>
 
             </div>
-
           </div>
-
         </aside>
 
+        {/* Mobile Background Overlay */}
+        {mobileMenuOpen && (
+          <button
+            type="button"
+            aria-label="Close menu"
+            onClick={closeMobileMenu}
+            className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          />
+        )}
 
         {/* ================= MAIN CONTENT ================= */}
-        <section className="h-screen min-w-0 flex-1 overflow-y-auto">
+        <section className="min-h-screen min-w-0 flex-1">
 
           {/* Header */}
-          <header className="border-b border-green-100 bg-white px-6 py-5 shadow-sm">
+          <header className="border-b border-green-100 bg-white px-4 py-4 shadow-sm sm:px-6 sm:py-5">
 
-            <h2 className="text-2xl font-bold text-green-950">
-              Volunteers
-            </h2>
+            <div className="flex items-start gap-3">
 
-            <p className="mt-1 text-sm text-gray-600">
-              Manage volunteers who support bird rescue activities.
-            </p>
+              {/* Mobile Hamburger Button */}
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(true)}
+                aria-label="Open navigation menu"
+                className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-800 text-2xl text-white transition hover:bg-green-900 lg:hidden"
+              >
+                ☰
+              </button>
 
+              <div className="min-w-0">
+                <h2 className="text-xl font-bold text-green-950 sm:text-2xl">
+                  Volunteers
+                </h2>
+
+                <p className="mt-1 text-sm text-gray-600">
+                  Manage volunteers who support bird rescue activities.
+                </p>
+              </div>
+
+            </div>
           </header>
 
-
           {/* Content */}
-          <div className="px-6 py-8">
+          <div className="px-4 py-5 sm:px-6 sm:py-8">
 
             {/* Summary Cards */}
-            <div className="grid gap-5 sm:grid-cols-3">
+            <div className="grid gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
 
-              <div className="rounded-2xl bg-white p-6 shadow-sm">
+              {/* Total Volunteers */}
+              <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
 
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-green-100 text-xl">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-green-100">
                   <img
                     src="/images/icons/support 1.jpg"
                     alt="Volunteers"
@@ -272,10 +324,10 @@ export default function VolunteersPage() {
 
               </div>
 
+              {/* Active Volunteers */}
+              <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
 
-              <div className="rounded-2xl bg-white p-6 shadow-sm">
-
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-green-100 text-xl">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-green-100">
                   <img
                     src="/images/icons/active volunteer.jpg"
                     alt="Active Volunteers"
@@ -293,10 +345,10 @@ export default function VolunteersPage() {
 
               </div>
 
+              {/* Service Areas */}
+              <div className="rounded-2xl bg-white p-5 shadow-sm sm:col-span-2 sm:p-6 xl:col-span-1">
 
-              <div className="rounded-2xl bg-white p-6 shadow-sm">
-
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-green-100 text-xl">
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-green-100">
                   <img
                     src="/images/icons/visit us.jpg"
                     alt="Service Areas"
@@ -316,11 +368,10 @@ export default function VolunteersPage() {
 
             </div>
 
-
             {/* Volunteer Table */}
-            <div className="mt-8 overflow-hidden rounded-2xl bg-white shadow-sm">
+            <div className="mt-6 overflow-hidden rounded-2xl bg-white shadow-sm sm:mt-8">
 
-              <div className="border-b border-gray-100 px-6 py-5">
+              <div className="border-b border-gray-100 px-4 py-5 sm:px-6">
 
                 <h3 className="text-xl font-bold text-green-950">
                   Volunteer List
@@ -332,12 +383,10 @@ export default function VolunteersPage() {
 
               </div>
 
-
               {/* Search and Filter */}
-              <div className="flex flex-col gap-4 border-b border-gray-100 px-6 py-5 md:flex-row">
+              <div className="flex flex-col gap-4 border-b border-gray-100 px-4 py-5 sm:px-6 md:flex-row">
 
-                <div className="flex-1">
-
+                <div className="min-w-0 flex-1">
                   <input
                     type="text"
                     value={search}
@@ -345,12 +394,9 @@ export default function VolunteersPage() {
                     placeholder="Search by name, ID, phone or area..."
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
                   />
-
                 </div>
 
-
                 <div className="md:w-48">
-
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
@@ -360,72 +406,55 @@ export default function VolunteersPage() {
                     <option value="Active">Active</option>
                     <option value="Inactive">Inactive</option>
                   </select>
-
                 </div>
 
               </div>
 
-
-              <div className="overflow-x-auto">
+              {/* Table: scroll horizontally on mobile */}
+              <div className="w-full overflow-x-auto">
 
                 <table className="w-full min-w-[900px] text-left">
 
                   <thead className="bg-green-50">
-
                     <tr>
-
                       <th className="px-6 py-4 text-sm font-semibold text-green-950">
                         ID
                       </th>
-
                       <th className="px-6 py-4 text-sm font-semibold text-green-950">
                         Volunteer
                       </th>
-
                       <th className="px-6 py-4 text-sm font-semibold text-green-950">
                         Phone
                       </th>
-
                       <th className="px-6 py-4 text-sm font-semibold text-green-950">
                         Email
                       </th>
-
                       <th className="px-6 py-4 text-sm font-semibold text-green-950">
                         Area
                       </th>
-
                       <th className="px-6 py-4 text-sm font-semibold text-green-950">
                         Status
                       </th>
-
                       <th className="px-6 py-4 text-sm font-semibold text-green-950">
                         Action
                       </th>
-
                     </tr>
-
                   </thead>
-
 
                   <tbody className="divide-y divide-gray-100">
 
                     {filteredVolunteers.length > 0 ? (
                       filteredVolunteers.map((volunteer) => (
-
                         <tr
                           key={volunteer.id}
                           className="transition hover:bg-green-50"
                         >
-
                           <td className="px-6 py-5 font-semibold text-green-950">
                             {volunteer.id}
                           </td>
 
-
                           <td className="px-6 py-5">
-
                             <div className="flex items-center gap-3">
-
                               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 font-bold text-green-700">
                                 {volunteer.name.charAt(0)}
                               </div>
@@ -433,29 +462,22 @@ export default function VolunteersPage() {
                               <span className="font-medium text-gray-700">
                                 {volunteer.name}
                               </span>
-
                             </div>
-
                           </td>
-
 
                           <td className="px-6 py-5 text-gray-600">
                             {volunteer.phone}
                           </td>
 
-
                           <td className="px-6 py-5 text-gray-600">
                             {volunteer.email}
                           </td>
-
 
                           <td className="px-6 py-5 text-gray-600">
                             {volunteer.area}
                           </td>
 
-
                           <td className="px-6 py-5">
-
                             <span
                               className={`rounded-full px-3 py-1 text-xs font-semibold ${
                                 volunteer.status === "Active"
@@ -465,12 +487,9 @@ export default function VolunteersPage() {
                             >
                               {volunteer.status}
                             </span>
-
                           </td>
 
-
                           <td className="px-6 py-5">
-
                             <button
                               type="button"
                               onClick={() =>
@@ -480,14 +499,10 @@ export default function VolunteersPage() {
                             >
                               View
                             </button>
-
                           </td>
-
                         </tr>
-
                       ))
                     ) : (
-
                       <tr>
                         <td
                           colSpan="7"
@@ -496,41 +511,33 @@ export default function VolunteersPage() {
                           No volunteers found.
                         </td>
                       </tr>
-
                     )}
 
                   </tbody>
-
                 </table>
-
               </div>
 
             </div>
 
           </div>
-
         </section>
-
       </div>
-
 
       {/* ================= VOLUNTEER DETAILS MODAL ================= */}
       {selectedVolunteer && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto bg-black/40 px-4 py-6">
 
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5">
+          <div className="my-auto w-full max-w-lg rounded-3xl bg-white p-5 shadow-2xl sm:p-7">
 
-          <div className="w-full max-w-lg rounded-3xl bg-white p-7 shadow-2xl">
+            <div className="flex items-center justify-between gap-3">
 
-            <div className="flex items-center justify-between">
-
-              <div className="flex items-center gap-3">
-
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-lg font-bold text-green-700">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-100 text-lg font-bold text-green-700">
                   {selectedVolunteer.name.charAt(0)}
                 </div>
 
-                <div>
-                  <h3 className="text-xl font-bold text-green-950">
+                <div className="min-w-0">
+                  <h3 className="break-words text-xl font-bold text-green-950">
                     {selectedVolunteer.name}
                   </h3>
 
@@ -538,19 +545,17 @@ export default function VolunteersPage() {
                     Volunteer ID: {selectedVolunteer.id}
                   </p>
                 </div>
-
               </div>
 
               <button
                 type="button"
                 onClick={() => setSelectedVolunteer(null)}
-                className="rounded-full bg-gray-100 px-3 py-1 text-xl text-gray-500 transition hover:bg-gray-200"
+                className="shrink-0 rounded-full bg-gray-100 px-3 py-1 text-xl text-gray-500 transition hover:bg-gray-200"
               >
                 ×
               </button>
 
             </div>
-
 
             <div className="mt-6 space-y-4">
 
@@ -559,22 +564,20 @@ export default function VolunteersPage() {
                   Phone
                 </p>
 
-                <p className="mt-1 font-medium text-green-950">
+                <p className="mt-1 break-words font-medium text-green-950">
                   {selectedVolunteer.phone}
                 </p>
               </div>
-
 
               <div className="rounded-xl bg-green-50 p-4">
                 <p className="text-xs font-semibold uppercase text-gray-500">
                   Email
                 </p>
 
-                <p className="mt-1 font-medium text-green-950">
+                <p className="mt-1 break-words font-medium text-green-950">
                   {selectedVolunteer.email}
                 </p>
               </div>
-
 
               <div className="grid gap-4 sm:grid-cols-2">
 
@@ -587,7 +590,6 @@ export default function VolunteersPage() {
                     {selectedVolunteer.area}
                   </p>
                 </div>
-
 
                 <div className="rounded-xl bg-green-50 p-4">
                   <p className="text-xs font-semibold uppercase text-gray-500">
@@ -606,12 +608,9 @@ export default function VolunteersPage() {
                 </div>
 
               </div>
-
             </div>
 
-
             <div className="mt-6 flex justify-end">
-
               <button
                 type="button"
                 onClick={() => setSelectedVolunteer(null)}
@@ -619,15 +618,11 @@ export default function VolunteersPage() {
               >
                 Close
               </button>
-
             </div>
 
           </div>
-
         </div>
-
       )}
-
     </main>
   );
 }
