@@ -1,35 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-const volunteers = [
-  {
-    id: "V-001",
-    name: "Aarav Sharma",
-    phone: "+91 9876543210",
-    email: "aarav@example.com",
-    area: "Andheri",
-    status: "Active",
-  },
-  {
-    id: "V-002",
-    name: "Priya Patel",
-    phone: "+91 9876543211",
-    email: "priya@example.com",
-    area: "Marol",
-    status: "Active",
-  },
-  {
-    id: "V-003",
-    name: "Rohan Mehta",
-    phone: "+91 9876543212",
-    email: "rohan@example.com",
-    area: "Andheri East",
-    status: "Inactive",
-  },
-];
+import { getVolunteers } from "@/api/volunteerApi";
 
 export default function VolunteersPage() {
   const router = useRouter();
@@ -39,6 +13,43 @@ export default function VolunteersPage() {
   const [selectedVolunteer, setSelectedVolunteer] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // ================= VOLUNTEERS API DATA =================
+  const [volunteers, setVolunteers] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadVolunteers = async () => {
+      try {
+        const response = await getVolunteers();
+
+        console.log("VOLUNTEERS:", response);
+
+        const data = response?.data || [];
+
+        const formattedVolunteers = data.map((volunteer) => ({
+          id: volunteer._id,
+          name: volunteer.name || "",
+          phone: volunteer.phone || "",
+          email: volunteer.email || "",
+          area: volunteer.area || "",
+          status: "Active",
+          availability: volunteer.availability || "",
+          interest: volunteer.interest || "",
+          message: volunteer.message || "",
+          createdAt: volunteer.createdAt || "",
+        }));
+
+        setVolunteers(formattedVolunteers);
+      } catch (error) {
+        console.error("Get Volunteers Error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadVolunteers();
+  }, []);
+
   const handleLogout = () => {
     document.cookie =
       "adminAuthorized=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -46,6 +57,7 @@ export default function VolunteersPage() {
     router.push("/login");
   };
 
+  // ================= SEARCH + FILTER =================
   const filteredVolunteers = volunteers.filter((volunteer) => {
     const searchText = search.toLowerCase();
 
@@ -420,21 +432,27 @@ export default function VolunteersPage() {
                       <th className="px-6 py-4 text-sm font-semibold text-green-950">
                         ID
                       </th>
+
                       <th className="px-6 py-4 text-sm font-semibold text-green-950">
                         Volunteer
                       </th>
+
                       <th className="px-6 py-4 text-sm font-semibold text-green-950">
                         Phone
                       </th>
+
                       <th className="px-6 py-4 text-sm font-semibold text-green-950">
                         Email
                       </th>
+
                       <th className="px-6 py-4 text-sm font-semibold text-green-950">
                         Area
                       </th>
+
                       <th className="px-6 py-4 text-sm font-semibold text-green-950">
                         Status
                       </th>
+
                       <th className="px-6 py-4 text-sm font-semibold text-green-950">
                         Action
                       </th>
@@ -443,18 +461,32 @@ export default function VolunteersPage() {
 
                   <tbody className="divide-y divide-gray-100">
 
-                    {filteredVolunteers.length > 0 ? (
+                    {/* Loading */}
+                    {loading ? (
+                      <tr>
+                        <td
+                          colSpan="7"
+                          className="px-6 py-10 text-center text-gray-500"
+                        >
+                          Loading volunteers...
+                        </td>
+                      </tr>
+                    ) : filteredVolunteers.length > 0 ? (
+
+                      /* Volunteer Data */
                       filteredVolunteers.map((volunteer) => (
                         <tr
                           key={volunteer.id}
                           className="transition hover:bg-green-50"
                         >
+
                           <td className="px-6 py-5 font-semibold text-green-950">
                             {volunteer.id}
                           </td>
 
                           <td className="px-6 py-5">
                             <div className="flex items-center gap-3">
+
                               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 font-bold text-green-700">
                                 {volunteer.name.charAt(0)}
                               </div>
@@ -462,6 +494,7 @@ export default function VolunteersPage() {
                               <span className="font-medium text-gray-700">
                                 {volunteer.name}
                               </span>
+
                             </div>
                           </td>
 
@@ -478,6 +511,7 @@ export default function VolunteersPage() {
                           </td>
 
                           <td className="px-6 py-5">
+
                             <span
                               className={`rounded-full px-3 py-1 text-xs font-semibold ${
                                 volunteer.status === "Active"
@@ -487,9 +521,11 @@ export default function VolunteersPage() {
                             >
                               {volunteer.status}
                             </span>
+
                           </td>
 
                           <td className="px-6 py-5">
+
                             <button
                               type="button"
                               onClick={() =>
@@ -499,10 +535,15 @@ export default function VolunteersPage() {
                             >
                               View
                             </button>
+
                           </td>
+
                         </tr>
                       ))
+
                     ) : (
+
+                      /* No Data */
                       <tr>
                         <td
                           colSpan="7"
@@ -511,6 +552,7 @@ export default function VolunteersPage() {
                           No volunteers found.
                         </td>
                       </tr>
+
                     )}
 
                   </tbody>
@@ -532,11 +574,13 @@ export default function VolunteersPage() {
             <div className="flex items-center justify-between gap-3">
 
               <div className="flex min-w-0 items-center gap-3">
+
                 <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-green-100 text-lg font-bold text-green-700">
                   {selectedVolunteer.name.charAt(0)}
                 </div>
 
                 <div className="min-w-0">
+
                   <h3 className="break-words text-xl font-bold text-green-950">
                     {selectedVolunteer.name}
                   </h3>
@@ -544,6 +588,7 @@ export default function VolunteersPage() {
                   <p className="text-sm text-gray-500">
                     Volunteer ID: {selectedVolunteer.id}
                   </p>
+
                 </div>
               </div>
 
@@ -559,7 +604,9 @@ export default function VolunteersPage() {
 
             <div className="mt-6 space-y-4">
 
+              {/* Phone */}
               <div className="rounded-xl bg-green-50 p-4">
+
                 <p className="text-xs font-semibold uppercase text-gray-500">
                   Phone
                 </p>
@@ -567,9 +614,12 @@ export default function VolunteersPage() {
                 <p className="mt-1 break-words font-medium text-green-950">
                   {selectedVolunteer.phone}
                 </p>
+
               </div>
 
+              {/* Email */}
               <div className="rounded-xl bg-green-50 p-4">
+
                 <p className="text-xs font-semibold uppercase text-gray-500">
                   Email
                 </p>
@@ -577,11 +627,14 @@ export default function VolunteersPage() {
                 <p className="mt-1 break-words font-medium text-green-950">
                   {selectedVolunteer.email}
                 </p>
+
               </div>
 
+              {/* Area + Status */}
               <div className="grid gap-4 sm:grid-cols-2">
 
                 <div className="rounded-xl bg-green-50 p-4">
+
                   <p className="text-xs font-semibold uppercase text-gray-500">
                     Service Area
                   </p>
@@ -589,9 +642,11 @@ export default function VolunteersPage() {
                   <p className="mt-1 font-medium text-green-950">
                     {selectedVolunteer.area}
                   </p>
+
                 </div>
 
                 <div className="rounded-xl bg-green-50 p-4">
+
                   <p className="text-xs font-semibold uppercase text-gray-500">
                     Status
                   </p>
@@ -605,12 +660,15 @@ export default function VolunteersPage() {
                   >
                     {selectedVolunteer.status}
                   </span>
+
                 </div>
 
               </div>
+
             </div>
 
             <div className="mt-6 flex justify-end">
+
               <button
                 type="button"
                 onClick={() => setSelectedVolunteer(null)}
@@ -618,11 +676,13 @@ export default function VolunteersPage() {
               >
                 Close
               </button>
+
             </div>
 
           </div>
         </div>
       )}
+
     </main>
   );
 }

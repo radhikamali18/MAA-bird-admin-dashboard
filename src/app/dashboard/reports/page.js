@@ -1,37 +1,23 @@
+
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-const reports = [
-  {
-    id: "BR-001",
-    bird: "Pigeon",
-    location: "Andheri East, Mumbai",
-    date: "27 Sep 2026",
-    status: "Pending",
-  },
-  {
-    id: "BR-002",
-    bird: "Crow",
-    location: "Marol, Mumbai",
-    date: "26 Sep 2026",
-    status: "Under Care",
-  },
-  {
-    id: "BR-003",
-    bird: "Sparrow",
-    location: "Andheri West, Mumbai",
-    date: "25 Sep 2026",
-    status: "Recovered",
-  },
-];
+import {
+  getReports,
+  deleteReport,
+  updateReport,
+} from "@/api/reportApi";
 
 export default function ReportsPage() {
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedReport, setSelectedReport] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
 
   // Mobile Menu
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -42,6 +28,140 @@ export default function ReportsPage() {
 
   const router = useRouter();
 
+  // ================= GET REPORTS =================
+
+  const loadReports = async () => {
+    try {
+      setLoading(true);
+
+      const response = await getReports();
+
+      const data = Array.isArray(response?.data)
+        ? response.data
+        : [];
+
+      const formattedReports = data.map((report) => ({
+        ...report,
+
+        id: report._id,
+
+        // Actual form me bird name nahi hai.
+        // Condition ko Bird column me show kar rahe hain.
+        bird: report.condition || "Unknown",
+
+        location: report.location || "Not provided",
+
+        date: report.createdAt
+          ? new Date(report.createdAt).toLocaleDateString(
+              "en-IN",
+              {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              }
+            )
+          : "—",
+
+        status: report.status || "Pending",
+      }));
+
+      setReports(formattedReports);
+    } catch (error) {
+      console.error("Failed to load reports:", error);
+      setReports([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadReports();
+  }, []);
+
+  // ================= DELETE REPORT =================
+
+  const handleDelete = async (id) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this report?"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      setDeleting(true);
+
+      await deleteReport(id);
+
+      setReports((currentReports) =>
+        currentReports.filter(
+          (report) => report.id !== id
+        )
+      );
+
+      setSelectedReport(null);
+    } catch (error) {
+      console.error("Failed to delete report:", error);
+
+      alert(
+        error?.response?.data?.message ||
+          "Failed to delete report."
+      );
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  // ================= UPDATE STATUS =================
+
+  const handleStatusChange = async (id, status) => {
+    try {
+      setUpdatingStatus(true);
+
+      const response = await updateReport(id, {
+        status,
+      });
+
+      const updatedReport = response?.data || {};
+
+      setReports((currentReports) =>
+        currentReports.map((report) =>
+          report.id === id
+            ? {
+                ...report,
+                ...updatedReport,
+                status,
+              }
+            : report
+        )
+      );
+
+      setSelectedReport((currentReport) =>
+        currentReport &&
+        currentReport.id === id
+          ? {
+              ...currentReport,
+              ...updatedReport,
+              status,
+            }
+          : currentReport
+      );
+    } catch (error) {
+      console.error(
+        "Failed to update report status:",
+        error
+      );
+
+      alert(
+        error?.response?.data?.message ||
+          "Failed to update report status."
+      );
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  // ================= LOGOUT =================
+
   const handleLogout = () => {
     document.cookie =
       "adminAuthorized=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
@@ -49,13 +169,21 @@ export default function ReportsPage() {
     router.push("/login");
   };
 
+  // ================= SEARCH + FILTER =================
+
   const filteredReports = reports.filter((report) => {
     const searchText = search.toLowerCase();
 
     const matchesSearch =
-      report.id.toLowerCase().includes(searchText) ||
-      report.bird.toLowerCase().includes(searchText) ||
-      report.location.toLowerCase().includes(searchText);
+      report.id
+        ?.toLowerCase()
+        .includes(searchText) ||
+      (report.condition || report.bird || "")
+        .toLowerCase()
+        .includes(searchText) ||
+      (report.location || "")
+        .toLowerCase()
+        .includes(searchText);
 
     const matchesStatus =
       statusFilter === "All" ||
@@ -63,6 +191,8 @@ export default function ReportsPage() {
 
     return matchesSearch && matchesStatus;
   });
+
+  // ================= SUMMARY =================
 
   const totalReports = reports.length;
 
@@ -86,7 +216,9 @@ export default function ReportsPage() {
 
         <aside
           className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col overflow-hidden bg-cover bg-center bg-no-repeat text-white transition-transform duration-300 lg:sticky lg:top-0 lg:z-20 lg:translate-x-0 ${
-            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+            mobileMenuOpen
+              ? "translate-x-0"
+              : "-translate-x-full"
           }`}
           style={{
             backgroundImage:
@@ -102,6 +234,7 @@ export default function ReportsPage() {
             <div className="flex items-center justify-between gap-3 border-b border-green-800 px-5 py-6">
 
               <div className="flex min-w-0 items-center gap-3">
+
                 <img
                   src="/images/logo.png"
                   alt="Maa Foundation Logo"
@@ -117,6 +250,7 @@ export default function ReportsPage() {
                     Admin Panel
                   </p>
                 </div>
+
               </div>
 
               <button
@@ -316,6 +450,7 @@ export default function ReportsPage() {
               </button>
 
               <div className="min-w-0">
+
                 <h2 className="text-2xl font-bold text-green-950">
                   Bird Reports
                 </h2>
@@ -323,6 +458,7 @@ export default function ReportsPage() {
                 <p className="mt-1 text-sm text-gray-600">
                   View and manage injured bird reports submitted by the community.
                 </p>
+
               </div>
 
             </div>
@@ -466,7 +602,9 @@ export default function ReportsPage() {
                   <input
                     type="text"
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={(e) =>
+                      setSearch(e.target.value)
+                    }
                     placeholder="Search by ID, bird or location..."
                     className="w-full min-w-0 rounded-xl border border-gray-200 px-4 py-3 text-gray-700 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
                   />
@@ -483,7 +621,9 @@ export default function ReportsPage() {
 
                   <select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={(e) =>
+                      setStatusFilter(e.target.value)
+                    }
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-700 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
                   >
                     <option value="All">
@@ -552,7 +692,24 @@ export default function ReportsPage() {
 
                   <tbody className="divide-y divide-gray-100">
 
-                    {filteredReports.length > 0 ? (
+                    {loading ? (
+
+                      <tr>
+
+                        <td
+                          colSpan="6"
+                          className="px-6 py-12 text-center"
+                        >
+
+                          <p className="font-semibold text-green-800">
+                            Loading reports...
+                          </p>
+
+                        </td>
+
+                      </tr>
+
+                    ) : filteredReports.length > 0 ? (
 
                       filteredReports.map((report) => (
 
@@ -580,7 +737,7 @@ export default function ReportsPage() {
                               </div>
 
                               <span className="font-medium text-gray-700">
-                                {report.bird}
+                                {report.condition || report.bird}
                               </span>
 
                             </div>
@@ -615,7 +772,9 @@ export default function ReportsPage() {
 
                             <button
                               type="button"
-                              onClick={() => setSelectedReport(report)}
+                              onClick={() =>
+                                setSelectedReport(report)
+                              }
                               className="rounded-full bg-green-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-800"
                             >
                               View
@@ -696,7 +855,9 @@ export default function ReportsPage() {
 
               <button
                 type="button"
-                onClick={() => setSelectedReport(null)}
+                onClick={() =>
+                  setSelectedReport(null)
+                }
                 aria-label="Close report details"
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-100 text-lg text-gray-600 transition hover:bg-gray-200"
               >
@@ -728,7 +889,9 @@ export default function ReportsPage() {
                   </p>
 
                   <p className="break-words text-lg font-bold text-green-950">
-                    {selectedReport.bird}
+                    {selectedReport.condition ||
+                      selectedReport.bird ||
+                      "Not provided"}
                   </p>
 
                 </div>
@@ -740,6 +903,22 @@ export default function ReportsPage() {
             {/* Details */}
 
             <div className="mt-6 space-y-4">
+
+              {/* Image */}
+
+              {selectedReport.image && (
+                <div className="overflow-hidden rounded-2xl bg-gray-100">
+
+                  <img
+                    src={selectedReport.image}
+                    alt="Reported bird"
+                    className="h-56 w-full object-cover"
+                  />
+
+                </div>
+              )}
+
+              {/* Location */}
 
               <div className="flex flex-col gap-1 border-b border-gray-100 pb-3 sm:flex-row sm:justify-between sm:gap-4">
 
@@ -753,6 +932,68 @@ export default function ReportsPage() {
 
               </div>
 
+              {/* Condition */}
+
+              <div className="flex flex-col gap-1 border-b border-gray-100 pb-3 sm:flex-row sm:justify-between sm:gap-4">
+
+                <span className="text-sm text-gray-500">
+                  Condition
+                </span>
+
+                <span className="break-words text-sm font-semibold text-gray-800 sm:text-right">
+                  {selectedReport.condition ||
+                    "Not provided"}
+                </span>
+
+              </div>
+
+              {/* Reporter Name */}
+
+              <div className="flex flex-col gap-1 border-b border-gray-100 pb-3 sm:flex-row sm:justify-between sm:gap-4">
+
+                <span className="text-sm text-gray-500">
+                  Reporter Name
+                </span>
+
+                <span className="break-words text-sm font-semibold text-gray-800 sm:text-right">
+                  {selectedReport.name ||
+                    "Not provided"}
+                </span>
+
+              </div>
+
+              {/* Phone */}
+
+              <div className="flex flex-col gap-1 border-b border-gray-100 pb-3 sm:flex-row sm:justify-between sm:gap-4">
+
+                <span className="text-sm text-gray-500">
+                  Phone
+                </span>
+
+                <span className="break-words text-sm font-semibold text-gray-800 sm:text-right">
+                  {selectedReport.phone ||
+                    "Not provided"}
+                </span>
+
+              </div>
+
+              {/* Description */}
+
+              <div className="flex flex-col gap-1 border-b border-gray-100 pb-3">
+
+                <span className="text-sm text-gray-500">
+                  Description
+                </span>
+
+                <span className="break-words text-sm font-semibold text-gray-800">
+                  {selectedReport.description ||
+                    "No description provided"}
+                </span>
+
+              </div>
+
+              {/* Date */}
+
               <div className="flex flex-col gap-1 border-b border-gray-100 pb-3 sm:flex-row sm:justify-between sm:gap-4">
 
                 <span className="text-sm text-gray-500">
@@ -765,14 +1006,40 @@ export default function ReportsPage() {
 
               </div>
 
+              {/* Google Maps */}
+
+              {selectedReport.mapLink && (
+                <a
+                  href={selectedReport.mapLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block w-full rounded-xl border border-green-200 px-5 py-3 text-center font-semibold text-green-700 transition hover:bg-green-50"
+                >
+                  Open Google Maps
+                </a>
+              )}
+
+              {/* Status */}
+
               <div className="flex items-center justify-between gap-4">
 
                 <span className="text-sm text-gray-500">
                   Status
                 </span>
 
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                <select
+                  value={
+                    selectedReport.status ||
+                    "Pending"
+                  }
+                  disabled={updatingStatus}
+                  onChange={(e) =>
+                    handleStatusChange(
+                      selectedReport.id,
+                      e.target.value
+                    )
+                  }
+                  className={`rounded-full px-3 py-1 text-xs font-semibold outline-none ${
                     selectedReport.status === "Pending"
                       ? "bg-yellow-100 text-yellow-700"
                       : selectedReport.status === "Under Care"
@@ -780,22 +1047,53 @@ export default function ReportsPage() {
                       : "bg-green-100 text-green-700"
                   }`}
                 >
-                  {selectedReport.status}
-                </span>
+
+                  <option value="Pending">
+                    Pending
+                  </option>
+
+                  <option value="Under Care">
+                    Under Care
+                  </option>
+
+                  <option value="Recovered">
+                    Recovered
+                  </option>
+
+                </select>
 
               </div>
 
             </div>
 
-            {/* Close */}
+            {/* Delete + Close */}
 
-            <button
-              type="button"
-              onClick={() => setSelectedReport(null)}
-              className="mt-7 w-full rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800"
-            >
-              Close
-            </button>
+            <div className="mt-7 grid gap-3 sm:grid-cols-2">
+
+              <button
+                type="button"
+                onClick={() =>
+                  handleDelete(selectedReport.id)
+                }
+                disabled={deleting}
+                className="w-full rounded-xl bg-red-600 px-5 py-3 font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {deleting
+                  ? "Deleting..."
+                  : "Delete Report"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setSelectedReport(null)
+                }
+                className="w-full rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800"
+              >
+                Close
+              </button>
+
+            </div>
 
           </div>
 

@@ -1,48 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-const initialMessages = [
-  {
-    id: "M-001",
-    name: "Neha Sharma",
-    email: "neha@example.com",
-    phone: "+91 9876543210",
-    message: "I found an injured pigeon near Andheri.",
-    date: "27 Sep 2026",
-    status: "Unread",
-  },
-  {
-    id: "M-002",
-    name: "Rahul Patel",
-    email: "rahul@example.com",
-    phone: "+91 9876543211",
-    message: "I would like to volunteer for bird rescue activities.",
-    date: "26 Sep 2026",
-    status: "Read",
-  },
-  {
-    id: "M-003",
-    name: "Priya Mehta",
-    email: "priya@example.com",
-    phone: "+91 9876543212",
-    message: "I want to know more about supporting the foundation.",
-    date: "25 Sep 2026",
-    status: "Read",
-  },
-];
+import {
+  getContacts,
+  updateContactStatus,
+  deleteContact,
+} from "@/api/contactApi";
 
 export default function MessagesPage() {
   const router = useRouter();
 
-  const [messageList, setMessageList] = useState(initialMessages);
-
+  const [messageList, setMessageList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [selectedMessage, setSelectedMessage] = useState(null);
   const [showView, setShowView] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   // Mobile Menu
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -60,6 +36,49 @@ export default function MessagesPage() {
     router.push("/login");
   };
 
+  /* ================= FETCH MESSAGES ================= */
+
+  const fetchMessages = async () => {
+    try {
+      setLoading(true);
+
+      const response = await getContacts();
+
+      const contacts = response?.data || [];
+
+      const formattedContacts = contacts.map((contact) => ({
+        ...contact,
+        id: contact._id,
+        date: contact.createdAt
+          ? new Date(contact.createdAt).toLocaleDateString("en-GB", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })
+          : "-",
+        status:
+          contact.status === "New"
+            ? "Unread"
+            : contact.status || "Unread",
+      }));
+
+      setMessageList(formattedContacts);
+    } catch (error) {
+      console.error("Fetch contacts error:", error);
+
+      alert(
+        error?.response?.data?.message ||
+          "Failed to fetch messages. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMessages();
+  }, []);
+
   /* ================= FILTER MESSAGES ================= */
 
   const filteredMessages = messageList.filter((message) => {
@@ -70,6 +89,7 @@ export default function MessagesPage() {
       message.name.toLowerCase().includes(searchText) ||
       message.email.toLowerCase().includes(searchText) ||
       message.phone.toLowerCase().includes(searchText) ||
+      message.subject.toLowerCase().includes(searchText) ||
       message.message.toLowerCase().includes(searchText);
 
     const matchesStatus =
@@ -93,7 +113,7 @@ export default function MessagesPage() {
 
   /* ================= VIEW MESSAGE ================= */
 
-  const handleView = (message) => {
+  const handleView = async (message) => {
     setSelectedMessage({
       ...message,
       status: message.status === "Unread" ? "Read" : message.status,
@@ -102,16 +122,58 @@ export default function MessagesPage() {
     setShowView(true);
 
     if (message.status === "Unread") {
+      try {
+        await updateContactStatus(message.id, "Read");
+
+        setMessageList((previousMessages) =>
+          previousMessages.map((item) =>
+            item.id === message.id
+              ? {
+                  ...item,
+                  status: "Read",
+                }
+              : item
+          )
+        );
+      } catch (error) {
+        console.error("Update message status error:", error);
+      }
+    }
+  };
+
+  /* ================= DELETE MESSAGE ================= */
+
+  const handleDelete = async (messageId) => {
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this message?"
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeletingId(messageId);
+
+      await deleteContact(messageId);
+
       setMessageList((previousMessages) =>
-        previousMessages.map((item) =>
-          item.id === message.id
-            ? {
-                ...item,
-                status: "Read",
-              }
-            : item
-        )
+        previousMessages.filter((message) => message.id !== messageId)
       );
+
+      if (selectedMessage?.id === messageId) {
+        setShowView(false);
+        setSelectedMessage(null);
+      }
+    } catch (error) {
+      console.error("Delete contact error:", error);
+
+      alert(
+        error?.response?.data?.message ||
+          "Failed to delete message. Please try again."
+      );
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -544,6 +606,10 @@ export default function MessagesPage() {
                       Read
                     </option>
 
+                    <option value="Replied">
+                      Replied
+                    </option>
+
                   </select>
 
                 </div>
@@ -554,7 +620,7 @@ export default function MessagesPage() {
 
               <div className="w-full overflow-x-auto">
 
-                <table className="w-full min-w-[1000px] text-left">
+                <table className="w-full min-w-[1100px] text-left">
 
                   <thead className="bg-green-50">
 
@@ -570,6 +636,10 @@ export default function MessagesPage() {
 
                       <th className="px-6 py-4 text-sm font-semibold text-green-950">
                         Contact
+                      </th>
+
+                      <th className="px-6 py-4 text-sm font-semibold text-green-950">
+                        Subject
                       </th>
 
                       <th className="px-6 py-4 text-sm font-semibold text-green-950">
@@ -594,7 +664,18 @@ export default function MessagesPage() {
 
                   <tbody className="divide-y divide-gray-100">
 
-                    {filteredMessages.length > 0 ? (
+                    {loading ? (
+
+                      <tr>
+                        <td
+                          colSpan="8"
+                          className="px-6 py-10 text-center text-gray-500"
+                        >
+                          Loading messages...
+                        </td>
+                      </tr>
+
+                    ) : filteredMessages.length > 0 ? (
 
                       filteredMessages.map((message) => (
 
@@ -641,6 +722,20 @@ export default function MessagesPage() {
 
                           </td>
 
+                          {/* Subject */}
+
+                          <td className="px-6 py-5 text-sm text-gray-700">
+                            {message.subject === "bird-rescue"
+                              ? "Bird Rescue"
+                              : message.subject === "donation"
+                              ? "Donation / Support"
+                              : message.subject === "volunteer"
+                              ? "Volunteer"
+                              : message.subject === "general"
+                              ? "General Enquiry"
+                              : message.subject || "-"}
+                          </td>
+
                           {/* Message */}
 
                           <td className="max-w-xs px-6 py-5 text-sm text-gray-600">
@@ -673,13 +768,24 @@ export default function MessagesPage() {
 
                           <td className="px-6 py-5">
 
-                            <button
-                              type="button"
-                              onClick={() => handleView(message)}
-                              className="rounded-full bg-green-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-800"
-                            >
-                              View
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => handleView(message)}
+                                className="rounded-full bg-green-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-800"
+                              >
+                                View
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleDelete(message.id)}
+                                disabled={deletingId === message.id}
+                                className="rounded-full bg-red-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:opacity-60"
+                              >
+                                {deletingId === message.id ? "..." : "Delete"}
+                              </button>
+                            </div>
 
                           </td>
 
@@ -692,7 +798,7 @@ export default function MessagesPage() {
                       <tr>
 
                         <td
-                          colSpan="7"
+                          colSpan="8"
                           className="px-6 py-10 text-center text-gray-500"
                         >
                           No messages found.
@@ -790,6 +896,26 @@ export default function MessagesPage() {
               <div>
 
                 <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  Subject
+                </p>
+
+                <p className="mt-1 break-words text-sm text-gray-700">
+                  {selectedMessage.subject === "bird-rescue"
+                    ? "Bird Rescue"
+                    : selectedMessage.subject === "donation"
+                    ? "Donation / Support"
+                    : selectedMessage.subject === "volunteer"
+                    ? "Volunteer"
+                    : selectedMessage.subject === "general"
+                    ? "General Enquiry"
+                    : selectedMessage.subject || "-"}
+                </p>
+
+              </div>
+
+              <div>
+
+                <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                   Phone
                 </p>
 
@@ -821,6 +947,8 @@ export default function MessagesPage() {
                   className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold ${
                     selectedMessage.status === "Unread"
                       ? "bg-yellow-100 text-yellow-700"
+                      : selectedMessage.status === "Replied"
+                      ? "bg-blue-100 text-blue-700"
                       : "bg-green-100 text-green-700"
                   }`}
                 >

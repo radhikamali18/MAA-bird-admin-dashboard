@@ -4,113 +4,141 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-const galleryItems = [
-  {
-    id: "G-001",
-    title: "Rescued Owl",
-    date: "25 Sep 2024",
-    status: "Published",
-    image: "/images/gallery/images3.avif",
-  },
-  {
-    id: "G-002",
-    title: "Recovered Sparrow",
-    date: "22 dec 2024",
-    status: "Published",
-    image: "/images/gallery/images5.webp",
-  },
-  {
-    id: "G-003",
-    title: "Bird Rehabilitation",
-    date: "20 jan 2025",
-    status: "Draft",
-    image: "/images/gallery/images4.webp",
-  },
-  {
-    id: "G-004",
-    title: "Recovered Crow",
-    date: "18 oct 2025",
-    status: "Published",
-    image: "/images/gallery/crow.jpg",
-  },
-  {
-    id: "G-005",
-    title: "Rescued Pigeon",
-    date: "16 feb 2026",
-    status: "Published",
-    image: "/images/gallery/pegion.jpg",
-  },
-  {
-    id: "G-006",
-    title: "Bird Care and Recovery",
-    date: "14 july 2026",
-    status: "Published",
-    image: "/images/gallery/images1.webp",
-  },
-  {
-    id: "G-007",
-    title: "Bird Rescue and Release",
-    date: "12 Sep 2026",
-    status: "Published",
-    image: "/images/gallery/images6.jpg",
-  },
-];
+import {
+  getGallery,
+  createGallery,
+  updateGallery,
+  deleteGallery,
+} from "@/api/galleryApi";
+
 
 export default function GalleryPage() {
   const router = useRouter();
 
-  const [items, setItems] = useState(galleryItems);
-  const [galleryLoaded, setGalleryLoaded] = useState(false);
+  // Gallery API data
+  const [items, setItems] = useState([]);
 
+  // Loading states
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  // Modals
   const [showAddForm, setShowAddForm] = useState(false);
   const [showView, setShowView] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] =
+    useState(false);
 
-  const [selectedItem, setSelectedItem] = useState(null);
+  // Selected gallery
+  const [selectedItem, setSelectedItem] =
+    useState(null);
 
+  // Form
   const [title, setTitle] = useState("");
-  const [status, setStatus] = useState("Published");
+  const [status, setStatus] =
+    useState("Published");
+
+  // Image
   const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
+  const [imagePreview, setImagePreview] =
+    useState("");
 
+  // Search/filter
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [statusFilter, setStatusFilter] =
+    useState("All");
 
-  /* ================= LOAD SAVED GALLERY ================= */
+
+  /* =========================================================
+     LOAD GALLERY FROM API
+  ========================================================= */
+
+  const loadGallery = async () => {
+    try {
+      setLoading(true);
+
+      const response = await getGallery();
+
+      console.log(
+        "Gallery API Response:",
+        response
+      );
+
+      let galleryData = [];
+
+      if (Array.isArray(response)) {
+        galleryData = response;
+      } else if (
+        Array.isArray(response?.data)
+      ) {
+        galleryData = response.data;
+      } else if (
+        Array.isArray(response?.gallery)
+      ) {
+        galleryData = response.gallery;
+      } else if (
+        Array.isArray(response?.items)
+      ) {
+        galleryData = response.items;
+      }
+
+      const formattedData =
+        galleryData.map((item, index) => ({
+          id:
+            item._id ||
+            item.id ||
+            `G-${String(index + 1).padStart(
+              3,
+              "0"
+            )}`,
+
+          title: item.title || "",
+
+          date: item.createdAt
+            ? new Date(
+                item.createdAt
+              ).toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+              })
+            : "",
+
+          status:
+            item.status || "Published",
+
+          image:
+            item.image ||
+            item.imageUrl ||
+            item.image_url ||
+            "",
+        }));
+
+      setItems(formattedData);
+    } catch (error) {
+      console.error(
+        "Gallery load error:",
+        error
+      );
+
+      alert(
+        error?.response?.data?.message ||
+          "Gallery data load nahi ho saka."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   useEffect(() => {
-    const savedGallery = localStorage.getItem(
-      "maaFoundationGalleryItems"
-    );
-
-    if (savedGallery) {
-      try {
-        const parsedGallery = JSON.parse(savedGallery);
-
-        if (Array.isArray(parsedGallery)) {
-          setItems(parsedGallery);
-        }
-      } catch (error) {
-        console.log("Gallery data error");
-      }
-    }
-
-    setGalleryLoaded(true);
+    loadGallery();
   }, []);
 
-  /* ================= SAVE GALLERY ================= */
 
-  useEffect(() => {
-    if (galleryLoaded) {
-      localStorage.setItem(
-        "maaFoundationGalleryItems",
-        JSON.stringify(items)
-      );
-    }
-  }, [items, galleryLoaded]);
-
-  /* ================= LOGOUT ================= */
+  /* =========================================================
+     LOGOUT
+  ========================================================= */
 
   const handleLogout = () => {
     document.cookie =
@@ -119,141 +147,321 @@ export default function GalleryPage() {
     router.push("/login");
   };
 
-  /* ================= CLOSE MOBILE MENU ================= */
+
+  /* =========================================================
+     MOBILE MENU
+  ========================================================= */
 
   const closeMobileMenu = () => {
     setMobileMenuOpen(false);
   };
 
-  /* ================= FILTER ================= */
 
-  const filteredItems = items.filter((item) => {
-    const searchText = search.toLowerCase();
+  /* =========================================================
+     FILTER
+  ========================================================= */
 
-    const matchesSearch =
-      item.id.toLowerCase().includes(searchText) ||
-      item.title.toLowerCase().includes(searchText);
+  const filteredItems = items.filter(
+    (item) => {
+      const searchText =
+        search.toLowerCase();
 
-    const matchesStatus =
-      statusFilter === "All" ||
-      item.status === statusFilter;
+      const itemId = String(
+        item.id || ""
+      ).toLowerCase();
 
-    return matchesSearch && matchesStatus;
-  });
+      const itemTitle = String(
+        item.title || ""
+      ).toLowerCase();
 
-  /* ================= ADD PHOTO ================= */
+      const matchesSearch =
+        itemId.includes(searchText) ||
+        itemTitle.includes(searchText);
+
+      const matchesStatus =
+        statusFilter === "All" ||
+        item.status === statusFilter;
+
+      return (
+        matchesSearch &&
+        matchesStatus
+      );
+    }
+  );
+
+
+  /* =========================================================
+     IMAGE CHANGE
+  ========================================================= */
 
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file =
+      e.target.files?.[0];
 
-    if (file) {
-      setImage(file);
-
-      const reader = new FileReader();
-
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleAddPhoto = (e) => {
-    e.preventDefault();
-
-    if (!title.trim() || !imagePreview) {
-      alert("Please enter title and select a photo.");
+    if (!file) {
       return;
     }
 
-    const newItem = {
-      id: `G-${String(
-        items.reduce((max, item) => {
-          const number = Number(item.id.split("-")[1]) || 0;
-          return Math.max(max, number);
-        }, 0) + 1
-      ).padStart(3, "0")}`,
-      title: title,
-      date: new Date().toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }),
-      status: status,
-      image: imagePreview,
+    setImage(file);
+
+    const reader =
+      new FileReader();
+
+    reader.onloadend = () => {
+      setImagePreview(
+        reader.result
+      );
     };
 
-    setItems([...items, newItem]);
-
-    setTitle("");
-    setStatus("Published");
-    setImage(null);
-    setImagePreview("");
-    setShowAddForm(false);
+    reader.readAsDataURL(file);
   };
 
-  /* ================= VIEW ================= */
+
+  /* =========================================================
+     ADD PHOTO
+  ========================================================= */
+
+  const handleAddPhoto = async (e) => {
+    e.preventDefault();
+
+    if (!title.trim()) {
+      alert("Please enter title.");
+      return;
+    }
+
+    if (!image) {
+      alert("Please select a photo.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      const formData =
+        new FormData();
+
+      formData.append(
+        "title",
+        title.trim()
+      );
+
+      formData.append(
+        "status",
+        status
+      );
+
+      formData.append(
+        "image",
+        image
+      );
+
+      console.log(
+        "Creating Gallery:",
+        {
+          title: title.trim(),
+          status,
+          image: image.name,
+        }
+      );
+
+      const response =
+        await createGallery(
+          formData
+        );
+
+      console.log(
+        "Create Gallery Response:",
+        response
+      );
+
+      alert(
+        "Gallery photo added successfully."
+      );
+
+      await loadGallery();
+
+      resetForm();
+
+      setShowAddForm(false);
+    } catch (error) {
+      console.error(
+        "Create gallery error:",
+        error
+      );
+
+      alert(
+        error?.response?.data?.message ||
+          "Gallery photo add nahi ho saki."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+
+  /* =========================================================
+     VIEW
+  ========================================================= */
 
   const handleView = (item) => {
     setSelectedItem(item);
     setShowView(true);
   };
 
-  /* ================= EDIT ================= */
+
+  /* =========================================================
+     EDIT OPEN
+  ========================================================= */
 
   const handleEdit = (item) => {
     setSelectedItem(item);
 
-    setTitle(item.title);
-    setStatus(item.status);
-    setImagePreview(item.image);
+    setTitle(item.title || "");
+
+    setStatus(
+      item.status || "Published"
+    );
+
+    setImagePreview(
+      item.image || ""
+    );
+
+    // Important:
+    // New image abhi select nahi hui
     setImage(null);
 
     setShowEdit(true);
   };
 
-  const handleUpdate = (e) => {
+
+  /* =========================================================
+     UPDATE
+  ========================================================= */
+
+  const handleUpdate = async (e) => {
     e.preventDefault();
 
-    if (!title.trim() || !selectedItem) {
+    if (
+      !title.trim() ||
+      !selectedItem
+    ) {
       return;
     }
 
-    setItems(
-      items.map((item) =>
-        item.id === selectedItem.id
-          ? {
-              ...item,
-              title: title,
-              status: status,
-              image: imagePreview,
-            }
-          : item
-      )
-    );
+    try {
+      setSaving(true);
 
-    setShowEdit(false);
-    setSelectedItem(null);
-    setTitle("");
-    setStatus("Published");
-    setImage(null);
-    setImagePreview("");
-  };
+      const galleryId =
+        selectedItem.id ||
+        selectedItem._id;
 
-  /* ================= DELETE ================= */
+      const formData =
+        new FormData();
 
-  const handleDelete = (id) => {
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this gallery item?"
-    );
+      formData.append(
+        "title",
+        title.trim()
+      );
 
-    if (confirmDelete) {
-      setItems(items.filter((item) => item.id !== id));
+      formData.append(
+        "status",
+        status
+      );
+
+      // Only send image when
+      // user selected a new image
+      if (image) {
+        formData.append(
+          "image",
+          image
+        );
+      }
+
+      console.log(
+        "Updating Gallery:",
+        galleryId
+      );
+
+      await updateGallery(
+        galleryId,
+        formData
+      );
+
+      alert(
+        "Gallery photo updated successfully."
+      );
+
+      await loadGallery();
+
+      setShowEdit(false);
+
+      setSelectedItem(null);
+
+      resetForm();
+    } catch (error) {
+      console.error(
+        "Update gallery error:",
+        error
+      );
+
+      alert(
+        error?.response?.data?.message ||
+          "Gallery photo update nahi ho saki."
+      );
+    } finally {
+      setSaving(false);
     }
   };
 
-  /* ================= RESET FORM ================= */
+
+  /* =========================================================
+     DELETE
+  ========================================================= */
+
+  const handleDelete = async (id) => {
+    const confirmDelete =
+      window.confirm(
+        "Are you sure you want to delete this gallery item?"
+      );
+
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      setSaving(true);
+
+      console.log(
+        "Deleting Gallery:",
+        id
+      );
+
+      await deleteGallery(id);
+
+      alert(
+        "Gallery photo deleted successfully."
+      );
+
+      await loadGallery();
+    } catch (error) {
+      console.error(
+        "Delete gallery error:",
+        error
+      );
+
+      alert(
+        error?.response?.data?.message ||
+          "Gallery photo delete nahi ho saki."
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+
+  /* =========================================================
+     RESET FORM
+  ========================================================= */
 
   const resetForm = () => {
     setTitle("");
@@ -262,26 +470,33 @@ export default function GalleryPage() {
     setImagePreview("");
   };
 
+
+  /* =========================================================
+     RETURN
+  ========================================================= */
+
   return (
     <main className="min-h-screen overflow-x-hidden bg-green-50">
       <div className="relative flex min-h-screen">
 
-        {/* ================= SIDEBAR ================= */}
+        {/* =================================================
+            SIDEBAR
+        ================================================= */}
 
         <aside
           className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col overflow-hidden bg-cover bg-center bg-no-repeat text-white transition-transform duration-300 lg:sticky lg:top-0 lg:z-20 lg:translate-x-0 ${
-            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+            mobileMenuOpen
+              ? "translate-x-0"
+              : "-translate-x-full"
           }`}
           style={{
             backgroundImage:
               "url('/images/gallery/hero-bird-bg.png')",
           }}
         >
-          {/* Sidebar Content */}
-
           <div className="relative z-10 flex h-full flex-col">
 
-            {/* Logo Section */}
+            {/* Logo */}
 
             <div className="flex items-center justify-between gap-3 border-b border-green-800 px-5 py-5 sm:py-6">
 
@@ -305,8 +520,6 @@ export default function GalleryPage() {
 
               </div>
 
-              {/* Mobile Close Button */}
-
               <button
                 type="button"
                 onClick={closeMobileMenu}
@@ -318,6 +531,7 @@ export default function GalleryPage() {
 
             </div>
 
+
             {/* Navigation */}
 
             <nav className="flex-1 overflow-y-auto px-4 py-6">
@@ -327,8 +541,6 @@ export default function GalleryPage() {
               </p>
 
               <div className="space-y-2">
-
-                {/* Dashboard */}
 
                 <Link
                   href="/dashboard"
@@ -340,10 +552,10 @@ export default function GalleryPage() {
                     alt="Dashboard"
                     className="h-6 w-6 object-contain"
                   />
+
                   Dashboard
                 </Link>
 
-                {/* Bird Reports */}
 
                 <Link
                   href="/dashboard/reports"
@@ -355,10 +567,10 @@ export default function GalleryPage() {
                     alt="Bird Reports"
                     className="h-6 w-6 object-contain"
                   />
+
                   Bird Reports
                 </Link>
 
-                {/* Birds Under Care */}
 
                 <Link
                   href="/dashboard/care"
@@ -370,10 +582,10 @@ export default function GalleryPage() {
                     alt="Bird Care"
                     className="h-6 w-6 object-contain"
                   />
+
                   Birds Under Care
                 </Link>
 
-                {/* Volunteers */}
 
                 <Link
                   href="/dashboard/volunteers"
@@ -385,10 +597,10 @@ export default function GalleryPage() {
                     alt="Volunteers"
                     className="h-6 w-6 object-contain"
                   />
+
                   Volunteers
                 </Link>
 
-                {/* Gallery */}
 
                 <Link
                   href="/dashboard/gallery"
@@ -400,10 +612,10 @@ export default function GalleryPage() {
                     alt="Gallery"
                     className="h-6 w-6 object-contain"
                   />
+
                   Gallery
                 </Link>
 
-                {/* Messages */}
 
                 <Link
                   href="/dashboard/messages"
@@ -415,12 +627,12 @@ export default function GalleryPage() {
                     alt="Messages"
                     className="h-6 w-6 object-contain"
                   />
+
                   Messages
                 </Link>
 
               </div>
 
-              {/* Settings */}
 
               <div className="mt-8 border-t border-green-800 pt-6">
 
@@ -438,12 +650,14 @@ export default function GalleryPage() {
                     alt="Settings"
                     className="h-6 w-6 object-contain"
                   />
+
                   Settings
                 </Link>
 
               </div>
 
             </nav>
+
 
             {/* Logout */}
 
@@ -459,16 +673,17 @@ export default function GalleryPage() {
                   alt="Logout"
                   className="h-6 w-6 object-contain"
                 />
+
                 Logout
               </button>
 
             </div>
 
           </div>
-
         </aside>
 
-        {/* ================= MOBILE SIDEBAR BACKDROP ================= */}
+
+        {/* Mobile Backdrop */}
 
         {mobileMenuOpen && (
           <button
@@ -479,7 +694,10 @@ export default function GalleryPage() {
           />
         )}
 
-        {/* ================= MAIN CONTENT ================= */}
+
+        {/* =================================================
+            MAIN CONTENT
+        ================================================= */}
 
         <section className="min-h-screen min-w-0 flex-1">
 
@@ -489,16 +707,17 @@ export default function GalleryPage() {
 
             <div className="flex items-start gap-3">
 
-              {/* Mobile Hamburger */}
-
               <button
                 type="button"
-                onClick={() => setMobileMenuOpen(true)}
+                onClick={() =>
+                  setMobileMenuOpen(true)
+                }
                 aria-label="Open navigation menu"
                 className="mt-1 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-green-800 text-2xl text-white transition hover:bg-green-900 lg:hidden"
               >
                 ☰
               </button>
+
 
               <div className="min-w-0 flex-1">
 
@@ -512,7 +731,6 @@ export default function GalleryPage() {
 
               </div>
 
-              {/* Add Photo Button */}
 
               <button
                 type="button"
@@ -522,13 +740,19 @@ export default function GalleryPage() {
                 }}
                 className="shrink-0 rounded-xl bg-green-700 px-3 py-2.5 text-xs font-semibold text-white transition hover:bg-green-800 sm:px-5 sm:text-sm"
               >
-                <span className="sm:hidden">+ Add</span>
-                <span className="hidden sm:inline">+ Add Photo</span>
+                <span className="sm:hidden">
+                  + Add
+                </span>
+
+                <span className="hidden sm:inline">
+                  + Add Photo
+                </span>
               </button>
 
             </div>
 
           </header>
+
 
           {/* Content */}
 
@@ -537,8 +761,6 @@ export default function GalleryPage() {
             {/* Summary */}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-5">
-
-              {/* Total Photos */}
 
               <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
 
@@ -552,7 +774,6 @@ export default function GalleryPage() {
 
               </div>
 
-              {/* Published */}
 
               <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
 
@@ -563,14 +784,15 @@ export default function GalleryPage() {
                 <h3 className="mt-2 text-3xl font-bold text-green-700">
                   {
                     items.filter(
-                      (item) => item.status === "Published"
+                      (item) =>
+                        item.status ===
+                        "Published"
                     ).length
                   }
                 </h3>
 
               </div>
 
-              {/* Drafts */}
 
               <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
 
@@ -581,7 +803,9 @@ export default function GalleryPage() {
                 <h3 className="mt-2 text-3xl font-bold text-gray-700">
                   {
                     items.filter(
-                      (item) => item.status === "Draft"
+                      (item) =>
+                        item.status ===
+                        "Draft"
                     ).length
                   }
                 </h3>
@@ -589,6 +813,7 @@ export default function GalleryPage() {
               </div>
 
             </div>
+
 
             {/* Gallery Items */}
 
@@ -606,7 +831,8 @@ export default function GalleryPage() {
 
               </div>
 
-              {/* Search and Filter */}
+
+              {/* Search */}
 
               <div className="mb-5 flex flex-col gap-4 rounded-2xl bg-white p-4 shadow-sm sm:p-5 md:flex-row">
 
@@ -619,12 +845,17 @@ export default function GalleryPage() {
                   <input
                     type="text"
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={(e) =>
+                      setSearch(
+                        e.target.value
+                      )
+                    }
                     placeholder="Search by title or ID..."
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none transition placeholder:text-gray-400 focus:border-green-600 focus:ring-2 focus:ring-green-100"
                   />
 
                 </div>
+
 
                 <div className="w-full md:w-48">
 
@@ -634,7 +865,11 @@ export default function GalleryPage() {
 
                   <select
                     value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
+                    onChange={(e) =>
+                      setStatusFilter(
+                        e.target.value
+                      )
+                    }
                     className="w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700 outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
                   >
                     <option value="All">
@@ -654,175 +889,230 @@ export default function GalleryPage() {
 
               </div>
 
-              {/* ================= LIST ================= */}
 
-              <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
+              {/* Loading */}
 
-                <div className="overflow-x-auto">
+              {loading ? (
 
-                  <table className="w-full min-w-[850px] text-left">
+                <div className="rounded-2xl bg-white p-10 text-center shadow-sm">
 
-                    <thead className="bg-green-50">
+                  <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-green-200 border-t-green-700" />
 
-                      <tr>
+                  <p className="mt-4 text-sm text-gray-500">
+                    Loading gallery...
+                  </p>
 
-                        <th className="px-6 py-4 text-sm font-semibold text-green-950">
-                          Photo
-                        </th>
+                </div>
 
-                        <th className="px-6 py-4 text-sm font-semibold text-green-950">
-                          Gallery Item
-                        </th>
+              ) : (
 
-                        <th className="px-6 py-4 text-sm font-semibold text-green-950">
-                          Date
-                        </th>
+                <div className="overflow-hidden rounded-2xl bg-white shadow-sm">
 
-                        <th className="px-6 py-4 text-sm font-semibold text-green-950">
-                          Status
-                        </th>
+                  <div className="overflow-x-auto">
 
-                        <th className="px-6 py-4 text-sm font-semibold text-green-950">
-                          Action
-                        </th>
+                    <table className="w-full min-w-[850px] text-left">
 
-                      </tr>
+                      <thead className="bg-green-50">
 
-                    </thead>
+                        <tr>
 
-                    <tbody className="divide-y divide-gray-100">
+                          <th className="px-6 py-4 text-sm font-semibold text-green-950">
+                            Photo
+                          </th>
 
-                      {filteredItems.length > 0 ? (
+                          <th className="px-6 py-4 text-sm font-semibold text-green-950">
+                            Gallery Item
+                          </th>
 
-                        filteredItems.map((item) => (
+                          <th className="px-6 py-4 text-sm font-semibold text-green-950">
+                            Date
+                          </th>
 
-                          <tr
-                            key={item.id}
-                            className="transition hover:bg-green-50"
-                          >
+                          <th className="px-6 py-4 text-sm font-semibold text-green-950">
+                            Status
+                          </th>
 
-                            {/* Photo */}
+                          <th className="px-6 py-4 text-sm font-semibold text-green-950">
+                            Action
+                          </th>
 
-                            <td className="px-6 py-5">
+                        </tr>
 
-                              <div className="h-16 w-20 overflow-hidden rounded-xl border border-gray-200 bg-green-50">
+                      </thead>
 
-                                <img
-                                  src={item.image}
-                                  alt={item.title}
-                                  className="h-full w-full object-cover"
-                                />
 
-                              </div>
+                      <tbody className="divide-y divide-gray-100">
 
-                            </td>
+                        {filteredItems.length >
+                        0 ? (
 
-                            {/* Gallery Item */}
+                          filteredItems.map(
+                            (item) => (
 
-                            <td className="px-6 py-5">
-
-                              <div>
-
-                                <p className="font-bold text-green-950">
-                                  {item.title}
-                                </p>
-
-                                <p className="mt-1 text-sm text-gray-500">
-                                  {item.id}
-                                </p>
-
-                              </div>
-
-                            </td>
-
-                            {/* Date */}
-
-                            <td className="px-6 py-5 text-gray-600">
-                              {item.date}
-                            </td>
-
-                            {/* Status */}
-
-                            <td className="px-6 py-5">
-
-                              <span
-                                className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                                  item.status === "Published"
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-gray-100 text-gray-600"
-                                }`}
+                              <tr
+                                key={item.id}
+                                className="transition hover:bg-green-50"
                               >
-                                {item.status}
-                              </span>
 
-                            </td>
+                                {/* Photo */}
 
-                            {/* Actions */}
+                                <td className="px-6 py-5">
 
-                            <td className="px-6 py-5">
+                                  <div className="h-16 w-20 overflow-hidden rounded-xl border border-gray-200 bg-green-50">
 
-                              <div className="flex items-center gap-2">
+                                    {item.image ? (
 
-                                {/* View */}
+                                      <img
+                                        src={
+                                          item.image
+                                        }
+                                        alt={
+                                          item.title
+                                        }
+                                        className="h-full w-full object-cover"
+                                      />
 
-                                <button
-                                  type="button"
-                                  onClick={() => handleView(item)}
-                                  className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-50"
-                                >
-                                  View
-                                </button>
+                                    ) : (
 
-                                {/* Edit */}
+                                      <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
+                                        No Image
+                                      </div>
 
-                                <button
-                                  type="button"
-                                  onClick={() => handleEdit(item)}
-                                  className="rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-50"
-                                >
-                                  Edit
-                                </button>
+                                    )}
 
-                                {/* Delete */}
+                                  </div>
 
-                                <button
-                                  type="button"
-                                  onClick={() => handleDelete(item.id)}
-                                  className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
-                                >
-                                  Delete
-                                </button>
+                                </td>
 
-                              </div>
 
+                                {/* Gallery Item */}
+
+                                <td className="px-6 py-5">
+
+                                  <div>
+
+                                    <p className="font-bold text-green-950">
+                                      {
+                                        item.title
+                                      }
+                                    </p>
+
+                                    <p className="mt-1 text-sm text-gray-500">
+                                      {item.id}
+                                    </p>
+
+                                  </div>
+
+                                </td>
+
+
+                                {/* Date */}
+
+                                <td className="px-6 py-5 text-gray-600">
+                                  {item.date}
+                                </td>
+
+
+                                {/* Status */}
+
+                                <td className="px-6 py-5">
+
+                                  <span
+                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                                      item.status ===
+                                      "Published"
+                                        ? "bg-green-100 text-green-700"
+                                        : "bg-gray-100 text-gray-600"
+                                    }`}
+                                  >
+                                    {
+                                      item.status
+                                    }
+                                  </span>
+
+                                </td>
+
+
+                                {/* Actions */}
+
+                                <td className="px-6 py-5">
+
+                                  <div className="flex items-center gap-2">
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleView(
+                                          item
+                                        )
+                                      }
+                                      className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-50"
+                                    >
+                                      View
+                                    </button>
+
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleEdit(
+                                          item
+                                        )
+                                      }
+                                      className="rounded-lg border border-green-700 px-4 py-2 text-sm font-semibold text-green-700 transition hover:bg-green-50"
+                                    >
+                                      Edit
+                                    </button>
+
+
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleDelete(
+                                          item.id
+                                        )
+                                      }
+                                      disabled={
+                                        saving
+                                      }
+                                      className="rounded-lg border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                      Delete
+                                    </button>
+
+                                  </div>
+
+                                </td>
+
+                              </tr>
+
+                            )
+                          )
+
+                        ) : (
+
+                          <tr>
+
+                            <td
+                              colSpan="5"
+                              className="px-6 py-10 text-center text-gray-500"
+                            >
+                              No gallery items found.
                             </td>
 
                           </tr>
 
-                        ))
+                        )}
 
-                      ) : (
+                      </tbody>
 
-                        <tr>
+                    </table>
 
-                          <td
-                            colSpan="5"
-                            className="px-6 py-10 text-center text-gray-500"
-                          >
-                            No gallery items found.
-                          </td>
-
-                        </tr>
-
-                      )}
-
-                    </tbody>
-
-                  </table>
+                  </div>
 
                 </div>
 
-              </div>
+              )}
 
             </div>
 
@@ -832,9 +1122,10 @@ export default function GalleryPage() {
 
       </div>
 
-      {/* ================================================= */}
-      {/* ================= ADD PHOTO MODAL =============== */}
-      {/* ================================================= */}
+
+      {/* =================================================
+          ADD PHOTO MODAL
+      ================================================= */}
 
       {showAddForm && (
 
@@ -856,9 +1147,13 @@ export default function GalleryPage() {
 
               </div>
 
+
               <button
                 type="button"
-                onClick={() => setShowAddForm(false)}
+                onClick={() => {
+                  setShowAddForm(false);
+                  resetForm();
+                }}
                 aria-label="Close add photo form"
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xl text-gray-500 hover:bg-gray-100 hover:text-gray-800"
               >
@@ -866,6 +1161,7 @@ export default function GalleryPage() {
               </button>
 
             </div>
+
 
             <form
               onSubmit={handleAddPhoto}
@@ -883,13 +1179,18 @@ export default function GalleryPage() {
                 <input
                   type="text"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) =>
+                    setTitle(
+                      e.target.value
+                    )
+                  }
                   placeholder="Enter photo title"
                   required
                   className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
                 />
 
               </div>
+
 
               {/* Image */}
 
@@ -902,12 +1203,15 @@ export default function GalleryPage() {
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={handleImageChange}
-                  required={!imagePreview}
+                  onChange={
+                    handleImageChange
+                  }
+                  required={!image}
                   className="w-full min-w-0 rounded-xl border border-gray-200 px-3 py-3 text-sm"
                 />
 
               </div>
+
 
               {/* Preview */}
 
@@ -925,6 +1229,7 @@ export default function GalleryPage() {
 
               )}
 
+
               {/* Status */}
 
               <div>
@@ -935,7 +1240,11 @@ export default function GalleryPage() {
 
                 <select
                   value={status}
-                  onChange={(e) => setStatus(e.target.value)}
+                  onChange={(e) =>
+                    setStatus(
+                      e.target.value
+                    )
+                  }
                   className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600"
                 >
                   <option value="Published">
@@ -949,21 +1258,30 @@ export default function GalleryPage() {
 
               </div>
 
+
               <div className="flex flex-col-reverse gap-3 sm:flex-row">
 
                 <button
                   type="button"
-                  onClick={() => setShowAddForm(false)}
-                  className="flex-1 rounded-xl border border-gray-300 px-5 py-3 font-semibold text-gray-600 transition hover:bg-gray-50"
+                  onClick={() => {
+                    setShowAddForm(false);
+                    resetForm();
+                  }}
+                  disabled={saving}
+                  className="flex-1 rounded-xl border border-gray-300 px-5 py-3 font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
 
+
                 <button
                   type="submit"
-                  className="flex-1 rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800"
+                  disabled={saving}
+                  className="flex-1 rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  Add Photo
+                  {saving
+                    ? "Adding..."
+                    : "Add Photo"}
                 </button>
 
               </div>
@@ -976,228 +1294,291 @@ export default function GalleryPage() {
 
       )}
 
-      {/* ================================================= */}
-      {/* ================= VIEW MODAL ==================== */}
-      {/* ================================================= */}
 
-      {showView && selectedItem && (
+      {/* =================================================
+          VIEW MODAL
+      ================================================= */}
 
-        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-3 py-5 sm:items-center sm:p-5">
+      {showView &&
+        selectedItem && (
 
-          <div className="my-auto w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl sm:p-6">
+          <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-3 py-5 sm:items-center sm:p-5">
 
-            <div className="flex items-center justify-between gap-3">
+            <div className="my-auto w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl sm:p-6">
 
-              <h3 className="text-lg font-bold text-green-950 sm:text-xl">
-                Gallery Photo
-              </h3>
-
-              <button
-                type="button"
-                onClick={() => setShowView(false)}
-                aria-label="Close gallery photo"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xl text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-              >
-                ×
-              </button>
-
-            </div>
-
-            <div className="mt-5 overflow-hidden rounded-xl">
-
-              <img
-                src={selectedItem.image}
-                alt={selectedItem.title}
-                className="max-h-[55vh] w-full object-contain sm:h-72 sm:object-cover"
-              />
-
-            </div>
-
-            <div className="mt-5">
-
-              <h4 className="break-words text-xl font-bold text-green-950">
-                {selectedItem.title}
-              </h4>
-
-              <p className="mt-2 text-sm text-gray-500">
-                ID: {selectedItem.id}
-              </p>
-
-              <p className="mt-1 text-sm text-gray-500">
-                Date: {selectedItem.date}
-              </p>
-
-              <p className="mt-3">
-
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                    selectedItem.status === "Published"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  {selectedItem.status}
-                </span>
-
-              </p>
-
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setShowView(false)}
-              className="mt-6 w-full rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800"
-            >
-              Close
-            </button>
-
-          </div>
-
-        </div>
-
-      )}
-
-      {/* ================================================= */}
-      {/* ================= EDIT MODAL ==================== */}
-      {/* ================================================= */}
-
-      {showEdit && selectedItem && (
-
-        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-3 py-5 sm:items-center sm:p-5">
-
-          <div className="my-auto w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl sm:p-6">
-
-            <div className="flex items-start justify-between gap-3">
-
-              <div>
+              <div className="flex items-center justify-between gap-3">
 
                 <h3 className="text-lg font-bold text-green-950 sm:text-xl">
-                  Edit Gallery Photo
+                  Gallery Photo
                 </h3>
 
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowView(false)
+                  }
+                  aria-label="Close gallery photo"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xl text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                >
+                  ×
+                </button>
+
+              </div>
+
+
+              <div className="mt-5 overflow-hidden rounded-xl">
+
+                {selectedItem.image ? (
+
+                  <img
+                    src={
+                      selectedItem.image
+                    }
+                    alt={
+                      selectedItem.title
+                    }
+                    className="max-h-[55vh] w-full object-contain sm:h-72 sm:object-cover"
+                  />
+
+                ) : (
+
+                  <div className="flex h-72 items-center justify-center bg-gray-100 text-gray-400">
+                    No Image
+                  </div>
+
+                )}
+
+              </div>
+
+
+              <div className="mt-5">
+
+                <h4 className="break-words text-xl font-bold text-green-950">
+                  {
+                    selectedItem.title
+                  }
+                </h4>
+
+                <p className="mt-2 text-sm text-gray-500">
+                  ID: {selectedItem.id}
+                </p>
+
                 <p className="mt-1 text-sm text-gray-500">
-                  Update gallery item details.
+                  Date:{" "}
+                  {
+                    selectedItem.date
+                  }
+                </p>
+
+                <p className="mt-3">
+
+                  <span
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                      selectedItem.status ===
+                      "Published"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {
+                      selectedItem.status
+                    }
+                  </span>
+
                 </p>
 
               </div>
 
+
               <button
                 type="button"
-                onClick={() => setShowEdit(false)}
-                aria-label="Close edit form"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xl text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                onClick={() =>
+                  setShowView(false)
+                }
+                className="mt-6 w-full rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800"
               >
-                ×
+                Close
               </button>
 
             </div>
 
-            <form
-              onSubmit={handleUpdate}
-              className="mt-5 space-y-4 sm:mt-6 sm:space-y-5"
-            >
+          </div>
 
-              {/* Title */}
+        )}
 
-              <div>
 
-                <label className="mb-2 block text-sm font-semibold text-gray-700">
-                  Photo Title
-                </label>
+      {/* =================================================
+          EDIT MODAL
+      ================================================= */}
 
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
-                />
+      {showEdit &&
+        selectedItem && (
+
+          <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-3 py-5 sm:items-center sm:p-5">
+
+            <div className="my-auto w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl sm:p-6">
+
+              <div className="flex items-start justify-between gap-3">
+
+                <div>
+
+                  <h3 className="text-lg font-bold text-green-950 sm:text-xl">
+                    Edit Gallery Photo
+                  </h3>
+
+                  <p className="mt-1 text-sm text-gray-500">
+                    Update gallery item details.
+                  </p>
+
+                </div>
+
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEdit(false);
+                    resetForm();
+                    setSelectedItem(null);
+                  }}
+                  aria-label="Close edit form"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xl text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                >
+                  ×
+                </button>
 
               </div>
 
-              {/* New Image */}
 
-              <div>
+              <form
+                onSubmit={handleUpdate}
+                className="mt-5 space-y-4 sm:mt-6 sm:space-y-5"
+              >
 
-                <label className="mb-2 block text-sm font-semibold text-gray-700">
-                  Change Photo
-                </label>
+                {/* Title */}
 
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="w-full min-w-0 rounded-xl border border-gray-200 px-3 py-3 text-sm"
-                />
+                <div>
 
-              </div>
+                  <label className="mb-2 block text-sm font-semibold text-gray-700">
+                    Photo Title
+                  </label>
 
-              {/* Preview */}
-
-              {imagePreview && (
-
-                <div className="overflow-hidden rounded-xl border border-green-100">
-
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="h-40 w-full object-cover sm:h-48"
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) =>
+                      setTitle(
+                        e.target.value
+                      )
+                    }
+                    required
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
                   />
 
                 </div>
 
-              )}
 
-              {/* Status */}
+                {/* New Image */}
 
-              <div>
+                <div>
 
-                <label className="mb-2 block text-sm font-semibold text-gray-700">
-                  Status
-                </label>
+                  <label className="mb-2 block text-sm font-semibold text-gray-700">
+                    Change Photo
+                  </label>
 
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600"
-                >
-                  <option value="Published">
-                    Published
-                  </option>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={
+                      handleImageChange
+                    }
+                    className="w-full min-w-0 rounded-xl border border-gray-200 px-3 py-3 text-sm"
+                  />
 
-                  <option value="Draft">
-                    Draft
-                  </option>
-                </select>
+                </div>
 
-              </div>
 
-              <div className="flex flex-col-reverse gap-3 sm:flex-row">
+                {/* Preview */}
 
-                <button
-                  type="button"
-                  onClick={() => setShowEdit(false)}
-                  className="flex-1 rounded-xl border border-gray-300 px-5 py-3 font-semibold text-gray-600 transition hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
+                {imagePreview && (
 
-                <button
-                  type="submit"
-                  className="flex-1 rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800"
-                >
-                  Save Changes
-                </button>
+                  <div className="overflow-hidden rounded-xl border border-green-100">
 
-              </div>
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="h-40 w-full object-cover sm:h-48"
+                    />
 
-            </form>
+                  </div>
+
+                )}
+
+
+                {/* Status */}
+
+                <div>
+
+                  <label className="mb-2 block text-sm font-semibold text-gray-700">
+                    Status
+                  </label>
+
+                  <select
+                    value={status}
+                    onChange={(e) =>
+                      setStatus(
+                        e.target.value
+                      )
+                    }
+                    className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600"
+                  >
+                    <option value="Published">
+                      Published
+                    </option>
+
+                    <option value="Draft">
+                      Draft
+                    </option>
+                  </select>
+
+                </div>
+
+
+                <div className="flex flex-col-reverse gap-3 sm:flex-row">
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEdit(false);
+                      resetForm();
+                      setSelectedItem(null);
+                    }}
+                    disabled={saving}
+                    className="flex-1 rounded-xl border border-gray-300 px-5 py-3 font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+
+
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="flex-1 rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {saving
+                      ? "Saving..."
+                      : "Save Changes"}
+                  </button>
+
+                </div>
+
+              </form>
+
+            </div>
 
           </div>
 
-        </div>
-
-      )}
+        )}
 
     </main>
   );
