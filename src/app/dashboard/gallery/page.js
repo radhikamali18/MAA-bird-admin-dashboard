@@ -33,12 +33,14 @@ export default function GalleryPage() {
   const [selectedItem, setSelectedItem] = useState(null);
 
   // Form
-  const [title, setTitle] = useState("");
-  const [status, setStatus] = useState("Published");
+const [title, setTitle] = useState("");
+const [category, setCategory] = useState("Recovered Bird");
+const [description, setDescription] = useState("");
+const [status, setStatus] = useState("Published");
 
-  // Image
-  const [image, setImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState("");
+// Image
+const [image, setImage] = useState(null);
+const [imagePreview, setImagePreview] = useState("");
 
   // Search/filter
   const [search, setSearch] = useState("");
@@ -185,55 +187,106 @@ export default function GalleryPage() {
   ========================================================= */
 
   const handleAddPhoto = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!title.trim()) {
-      alert("Please enter title.");
-      return;
-    }
+  if (!title.trim() || !category.trim() || !description.trim()) {
+    alert("Please fill all required fields.");
+    return;
+  }
 
-    if (!image) {
-      alert("Please select a photo.");
-      return;
-    }
+  if (!image) {
+    alert("Please select a bird photo.");
+    return;
+  }
 
-    try {
-      setSaving(true);
+  try {
+    setSaving(true);
 
-      const formData = new FormData();
+    const formData = new FormData();
+    formData.append("title", title.trim());
+    formData.append("category", category.trim());
+    formData.append("description", description.trim());
+    formData.append("status", status);
+    formData.append("image", image);
 
-      formData.append("title", title.trim());
-      formData.append("status", status);
-      formData.append("image", image);
+    await createGallery(formData);
 
-      console.log("Creating Gallery:", {
-        title: title.trim(),
-        status,
-        image: image.name,
-      });
+    alert("Gallery photo added successfully.");
 
-      const response = await createGallery(formData);
+    await loadGallery();
+    resetForm();
+    setShowAddForm(false);
+  } catch (error) {
+    console.error("Add Gallery Error:", error);
+    alert(error?.response?.data?.message || "Gallery photo add nahi ho saki.");
+  } finally {
+    setSaving(false);
+  }
+};
 
-      console.log("Create Gallery Response:", response);
+// const handleEdit = (item) => {
+//   setSelectedItem(item);
 
-      alert("Gallery photo added successfully.");
+//   setTitle(item.title || "");
+//   setCategory(item.category || "Recovered Bird");
+//   setDescription(item.description || "");
+//   setStatus(item.status || "Published");
 
-      await loadGallery();
+//   setImagePreview(item.image || "");
+//   setImage(null);
 
-      resetForm();
+//   setShowEdit(true);
+// };
 
-      setShowAddForm(false);
-    } catch (error) {
-      console.error("Create gallery error:", error);
+// const handleUpdate = async (e) => {
+//   e.preventDefault();
 
-      alert(
-        error?.response?.data?.message ||
-          "Gallery photo add nahi ho saki."
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
+//   if (!title.trim() || !category.trim() || !description.trim()) {
+//     alert("Please fill all required fields.");
+//     return;
+//   }
+
+//   if (!selectedItem) return;
+
+//   try {
+//     setSaving(true);
+
+//     const formData = new FormData();
+
+//     formData.append("title", title.trim());
+//     formData.append("category", category.trim());
+//     formData.append("description", description.trim());
+//     formData.append("status", status);
+
+//     if (image) {
+//       formData.append("image", image);
+//     }
+
+//     await updateGallery(selectedItem.id, formData);
+
+//     alert("Gallery photo updated successfully.");
+
+//     await loadGallery();
+
+//     setShowEdit(false);
+//     setSelectedItem(null);
+//     resetForm();
+//   } catch (error) {
+//     console.error("Update Gallery Error:", error);
+//     alert(error?.response?.data?.message || "Gallery photo update nahi ho saki.");
+//   } finally {
+//     setSaving(false);
+//   }
+// };
+
+// const resetForm = () => {
+//   setTitle("");
+//   setCategory("Recovered Bird");
+//   setDescription("");
+//   setStatus("Published");
+//   setImage(null);
+//   setImagePreview("");
+// };
 
 
   /* =========================================================
@@ -955,147 +1008,154 @@ export default function GalleryPage() {
           ADD PHOTO MODAL
       ================================================= */}
 
-      {showAddForm && (
+     {showAddForm && (
+  <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-3 py-5 sm:items-center sm:p-5">
+    <div className="my-auto w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl sm:p-6">
 
-        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-3 py-5 sm:items-center sm:p-5">
-
-          <div className="my-auto w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl sm:p-6">
-
-            <div className="flex items-start justify-between gap-3">
-
-              <div>
-
-                <h3 className="text-lg font-bold text-green-950 sm:text-xl">
-                  Add Gallery Photo
-                </h3>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  Add a rescued or recovered bird photo.
-                </p>
-
-              </div>
-
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddForm(false);
-                  resetForm();
-                }}
-                aria-label="Close add photo form"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xl text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-              >
-                ×
-              </button>
-
-            </div>
-
-
-            <form
-              onSubmit={handleAddPhoto}
-              className="mt-5 space-y-4 sm:mt-6 sm:space-y-5"
-            >
-
-              <div>
-
-                <label className="mb-2 block text-sm font-semibold text-gray-700">
-                  Photo Title
-                </label>
-
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="Enter photo title"
-                  required
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
-                />
-
-              </div>
-
-
-              <div>
-
-                <label className="mb-2 block text-sm font-semibold text-gray-700">
-                  Bird Photo
-                </label>
-
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  required={!image}
-                  className="w-full min-w-0 rounded-xl border border-gray-200 px-3 py-3 text-sm"
-                />
-
-              </div>
-
-
-              {imagePreview && (
-
-                <div className="overflow-hidden rounded-xl border border-green-100">
-
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="h-40 w-full object-cover sm:h-48"
-                  />
-
-                </div>
-
-              )}
-
-
-              <div>
-
-                <label className="mb-2 block text-sm font-semibold text-gray-700">
-                  Status
-                </label>
-
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600"
-                >
-                  <option value="Published">Published</option>
-                  <option value="Draft">Draft</option>
-                </select>
-
-              </div>
-
-
-              <div className="flex flex-col-reverse gap-3 sm:flex-row">
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowAddForm(false);
-                    resetForm();
-                  }}
-                  disabled={saving}
-                  className="flex-1 rounded-xl border border-gray-300 px-5 py-3 font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-
-
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {saving ? "Adding..." : "Add Photo"}
-                </button>
-
-              </div>
-
-            </form>
-
-          </div>
-
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-xl font-bold text-green-950">
+            Add Gallery Photo
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Add rescued or recovered bird details.
+          </p>
         </div>
 
-      )}
+        <button
+          type="button"
+          onClick={() => {
+            setShowAddForm(false);
+            resetForm();
+          }}
+          className="text-2xl text-gray-500"
+        >
+          ×
+        </button>
+      </div>
+
+      <form onSubmit={handleAddPhoto} className="mt-6 space-y-5">
+
+        {/* Bird Photo */}
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-gray-700">
+            Bird Photo *
+          </label>
+
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            required
+            className="w-full rounded-xl border border-gray-200 px-3 py-3 text-sm"
+          />
+        </div>
+
+        {/* Image Preview */}
+        {imagePreview && (
+          <div className="overflow-hidden rounded-xl border border-green-100">
+            <img
+              src={imagePreview}
+              alt="Bird Preview"
+              className="h-48 w-full object-cover"
+            />
+          </div>
+        )}
+
+        {/* Category */}
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-gray-700">
+            Category / Badge *
+          </label>
+
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            required
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600"
+          >
+            <option value="Recovered Bird">Recovered Bird</option>
+            <option value="Bird Rescue">Bird Rescue</option>
+            <option value="Medical Care">Medical Care</option>
+            <option value="Bird Release">Bird Release</option>
+            <option value="Under Treatment">Under Treatment</option>
+          </select>
+        </div>
+
+        {/* Title */}
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-gray-700">
+            Photo Title *
+          </label>
+
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Example: Bird Recovery"
+            required
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600"
+          />
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-gray-700">
+            Description *
+          </label>
+
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Write a short description about this bird..."
+            rows={4}
+            required
+            className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600"
+          />
+        </div>
+
+        {/* Status */}
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-gray-700">
+            Status
+          </label>
+
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600"
+          >
+            <option value="Published">Published</option>
+            <option value="Draft">Draft</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col-reverse gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => {
+              setShowAddForm(false);
+              resetForm();
+            }}
+            disabled={saving}
+            className="flex-1 rounded-xl border border-gray-300 px-5 py-3 font-semibold text-gray-600"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="flex-1 rounded-xl bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-800 disabled:opacity-50"
+          >
+            {saving ? "Adding..." : "Add Photo"}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+)}
 
 
       {/* =================================================
@@ -1103,95 +1163,88 @@ export default function GalleryPage() {
       ================================================= */}
 
       {showView && selectedItem && (
+  <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-3 py-5 sm:items-center sm:p-5">
+    <div className="my-auto w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-xl">
 
-        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-3 py-5 sm:items-center sm:p-5">
+      <div className="flex items-center justify-between px-5 pt-5">
+        <h3 className="text-xl font-bold text-green-950">
+          Gallery Details
+        </h3>
 
-          <div className="my-auto w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl sm:p-6">
+        <button
+          type="button"
+          onClick={() => {
+            setShowView(false);
+            setSelectedItem(null);
+          }}
+          className="text-2xl text-gray-500"
+        >
+          ×
+        </button>
+      </div>
 
-            <div className="flex items-center justify-between gap-3">
-
-              <h3 className="text-lg font-bold text-green-950 sm:text-xl">
-                Gallery Photo
-              </h3>
-
-
-              <button
-                type="button"
-                onClick={() => setShowView(false)}
-                aria-label="Close gallery photo"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xl text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-              >
-                ×
-              </button>
-
-            </div>
-
-
-            <div className="mt-5 overflow-hidden rounded-xl">
-
-              {selectedItem.image ? (
-
-                <img
-                  src={selectedItem.image}
-                  alt={selectedItem.title}
-                  className="max-h-[55vh] w-full object-contain sm:h-72 sm:object-cover"
-                />
-
-              ) : (
-
-                <div className="flex h-72 items-center justify-center bg-gray-100 text-gray-400">
-                  No Image
-                </div>
-
-              )}
-
-            </div>
-
-
-            <div className="mt-5">
-
-              <h4 className="break-words text-xl font-bold text-green-950">
-                {selectedItem.title}
-              </h4>
-
-              <p className="mt-2 text-sm text-gray-500">
-                ID: {selectedItem.id}
-              </p>
-
-              <p className="mt-1 text-sm text-gray-500">
-                Date: {selectedItem.date}
-              </p>
-
-              <p className="mt-3">
-
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                    selectedItem.status === "Published"
-                      ? "bg-green-100 text-green-700"
-                      : "bg-gray-100 text-gray-600"
-                  }`}
-                >
-                  {selectedItem.status}
-                </span>
-
-              </p>
-
-            </div>
-
-
-            <button
-              type="button"
-              onClick={() => setShowView(false)}
-              className="mt-6 w-full rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800"
-            >
-              Close
-            </button>
-
+      {/* Bird Image */}
+      <div className="mt-5">
+        {selectedItem.image ? (
+          <img
+            src={selectedItem.image}
+            alt={selectedItem.title}
+            className="h-64 w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-64 items-center justify-center bg-gray-100 text-gray-400">
+            No Image Available
           </div>
+        )}
+      </div>
 
+      <div className="p-6">
+
+        {/* Category Badge */}
+        <div className="mb-4 inline-flex items-center rounded-full bg-green-100 px-5 py-3 font-semibold text-green-700">
+          {selectedItem.category || "Recovered Bird"}
         </div>
 
-      )}
+        {/* Title */}
+        <h4 className="text-2xl font-bold text-green-950">
+          {selectedItem.title}
+        </h4>
+
+        {/* Description */}
+        <p className="mt-3 text-base leading-7 text-gray-600">
+          {selectedItem.description || "No description available."}
+        </p>
+
+        {/* Other Details */}
+        <div className="mt-5 space-y-2 border-t border-gray-100 pt-4 text-sm text-gray-500">
+          <p>
+            <strong className="text-gray-700">ID:</strong> {selectedItem.id}
+          </p>
+
+          <p>
+            <strong className="text-gray-700">Date:</strong> {selectedItem.date || "N/A"}
+          </p>
+
+          <p>
+            <strong className="text-gray-700">Status:</strong> {selectedItem.status}
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            setShowView(false);
+            setSelectedItem(null);
+          }}
+          className="mt-6 w-full rounded-xl bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-800"
+        >
+          Close
+        </button>
+
+      </div>
+    </div>
+  </div>
+)}
 
 
       {/* =================================================
@@ -1199,146 +1252,152 @@ export default function GalleryPage() {
       ================================================= */}
 
       {showEdit && selectedItem && (
+  <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-3 py-5 sm:items-center sm:p-5">
+    <div className="my-auto w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl sm:p-6">
 
-        <div className="fixed inset-0 z-[60] flex items-start justify-center overflow-y-auto bg-black/50 p-3 py-5 sm:items-center sm:p-5">
-
-          <div className="my-auto w-full max-w-lg rounded-2xl bg-white p-4 shadow-xl sm:p-6">
-
-            <div className="flex items-start justify-between gap-3">
-
-              <div>
-
-                <h3 className="text-lg font-bold text-green-950 sm:text-xl">
-                  Edit Gallery Photo
-                </h3>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  Update gallery item details.
-                </p>
-
-              </div>
-
-
-              <button
-                type="button"
-                onClick={() => {
-                  setShowEdit(false);
-                  resetForm();
-                  setSelectedItem(null);
-                }}
-                aria-label="Close edit form"
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-2xl text-gray-500 hover:bg-gray-100 hover:text-gray-800"
-              >
-                ×
-              </button>
-
-            </div>
-
-
-            <form
-              onSubmit={handleUpdate}
-              className="mt-5 space-y-4 sm:mt-6 sm:space-y-5"
-            >
-
-              <div>
-
-                <label className="mb-2 block text-sm font-semibold text-gray-700">
-                  Photo Title
-                </label>
-
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600 focus:ring-2 focus:ring-green-100"
-                />
-
-              </div>
-
-
-              <div>
-
-                <label className="mb-2 block text-sm font-semibold text-gray-700">
-                  Change Photo
-                </label>
-
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageChange}
-                  className="w-full min-w-0 rounded-xl border border-gray-200 px-3 py-3 text-sm"
-                />
-
-              </div>
-
-
-              {imagePreview && (
-
-                <div className="overflow-hidden rounded-xl border border-green-100">
-
-                  <img
-                    src={imagePreview}
-                    alt="Preview"
-                    className="h-40 w-full object-cover sm:h-48"
-                  />
-
-                </div>
-
-              )}
-
-
-              <div>
-
-                <label className="mb-2 block text-sm font-semibold text-gray-700">
-                  Status
-                </label>
-
-                <select
-                  value={status}
-                  onChange={(e) => setStatus(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600"
-                >
-                  <option value="Published">Published</option>
-                  <option value="Draft">Draft</option>
-                </select>
-
-              </div>
-
-
-              <div className="flex flex-col-reverse gap-3 sm:flex-row">
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowEdit(false);
-                    resetForm();
-                    setSelectedItem(null);
-                  }}
-                  disabled={saving}
-                  className="flex-1 rounded-xl border border-gray-300 px-5 py-3 font-semibold text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-
-
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="flex-1 rounded-xl bg-green-700 px-5 py-3 font-semibold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {saving ? "Saving..." : "Save Changes"}
-                </button>
-
-              </div>
-
-            </form>
-
-          </div>
-
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-xl font-bold text-green-950">
+            Edit Gallery Photo
+          </h3>
+          <p className="mt-1 text-sm text-gray-500">
+            Update bird photo and details.
+          </p>
         </div>
 
-      )}
+        <button
+          type="button"
+          onClick={() => {
+            setShowEdit(false);
+            setSelectedItem(null);
+            resetForm();
+          }}
+          className="text-2xl text-gray-500"
+        >
+          ×
+        </button>
+      </div>
+
+      <form onSubmit={handleUpdate} className="mt-6 space-y-5">
+
+        {/* Existing / New Image */}
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-gray-700">
+            Change Bird Photo
+          </label>
+
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            className="w-full rounded-xl border border-gray-200 px-3 py-3 text-sm"
+          />
+        </div>
+
+        {/* Image Preview */}
+        {imagePreview && (
+          <div className="overflow-hidden rounded-xl border border-green-100">
+            <img
+              src={imagePreview}
+              alt="Bird Preview"
+              className="h-48 w-full object-cover"
+            />
+          </div>
+        )}
+
+        {/* Category */}
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-gray-700">
+            Category / Badge *
+          </label>
+
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            required
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600"
+          >
+            <option value="Recovered Bird">Recovered Bird</option>
+            <option value="Bird Rescue">Bird Rescue</option>
+            <option value="Medical Care">Medical Care</option>
+            <option value="Bird Release">Bird Release</option>
+            <option value="Under Treatment">Under Treatment</option>
+          </select>
+        </div>
+
+        {/* Title */}
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-gray-700">
+            Photo Title *
+          </label>
+
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600"
+          />
+        </div>
+
+        {/* Description */}
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-gray-700">
+            Description *
+          </label>
+
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={4}
+            required
+            className="w-full resize-none rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600"
+          />
+        </div>
+
+        {/* Status */}
+        <div>
+          <label className="mb-2 block text-sm font-semibold text-gray-700">
+            Status
+          </label>
+
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm outline-none focus:border-green-600"
+          >
+            <option value="Published">Published</option>
+            <option value="Draft">Draft</option>
+          </select>
+        </div>
+
+        <div className="flex flex-col-reverse gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={() => {
+              setShowEdit(false);
+              setSelectedItem(null);
+              resetForm();
+            }}
+            disabled={saving}
+            className="flex-1 rounded-xl border border-gray-300 px-5 py-3 font-semibold text-gray-600"
+          >
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            disabled={saving}
+            className="flex-1 rounded-xl bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-800 disabled:opacity-50"
+          >
+            {saving ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+)}
 
     </main>
   );
