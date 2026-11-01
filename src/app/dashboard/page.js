@@ -22,8 +22,9 @@ export default function DashboardPage() {
 
         {/* ================= SIDEBAR ================= */}
         <aside
-          className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col overflow-hidden bg-cover bg-center bg-no-repeat text-white transition-transform duration-300 lg:relative lg:translate-x-0 ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-            }`}
+          className={`fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col overflow-hidden bg-cover bg-center bg-no-repeat text-white transition-transform duration-300 ${
+            mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          } lg:translate-x-0`}
           style={{
             backgroundImage: "url('/images/gallery/hero-bird-bg.png')",
           }}
@@ -55,7 +56,7 @@ export default function DashboardPage() {
 
 
             {/* Navigation */}
-            <nav className="flex-1 overflow-y-auto px-4 py-6">
+            <nav className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
 
               <p className="mb-3 px-3 text-xs font-semibold uppercase tracking-widest text-green-300">
                 Main Menu
@@ -195,6 +196,7 @@ export default function DashboardPage() {
 
         </aside>
 
+
         {mobileMenuOpen && (
           <button
             type="button"
@@ -206,7 +208,7 @@ export default function DashboardPage() {
 
 
         {/* ================= MAIN CONTENT ================= */}
-        <section className="h-screen min-w-0 flex-1 overflow-y-auto">
+        <section className="h-screen min-w-0 flex-1 overflow-y-auto overflow-x-hidden lg:ml-64">
 
           {/* Top Header */}
           <header className="border-b border-green-100 bg-white px-6 py-5 shadow-sm">
